@@ -35,6 +35,14 @@ def clean_env(value: str) -> str:
     return (value or "").strip().strip('"').strip("'")
 
 
+def parse_clock(value: str, fallback: dtime) -> dtime:
+    try:
+        hour, minute = (int(part) for part in clean_env(value).split(":", 1))
+        return dtime(hour, minute)
+    except (TypeError, ValueError):
+        return fallback
+
+
 API_KEY = clean_env(os.getenv("KITE_API_KEY", ""))
 ACCESS_TOKEN = clean_env(os.getenv("KITE_ACCESS_TOKEN", ""))
 HISTORY_SLEEP_SEC = float(os.getenv("HISTORY_SLEEP_SEC", "0.35"))
@@ -47,6 +55,7 @@ FAST_SYMBOL_LIMIT = int(os.getenv("FAST_SYMBOL_LIMIT", "25"))
 FAST_SELECTION_WAIT_SEC = int(os.getenv("FAST_SELECTION_WAIT_SEC", "20"))
 FAST_RESELECT_SEC = int(os.getenv("FAST_RESELECT_SEC", "300"))
 SCAN_COMPUTE_EVERY_SEC = float(os.getenv("SCAN_COMPUTE_EVERY_SEC", "3"))
+PREMARKET_SEED_TIME = parse_clock(os.getenv("PREMARKET_SEED_TIME", "07:30"), dtime(7, 30))
 
 app = Flask(__name__)
 kite: Optional[KiteConnect] = None
@@ -371,22 +380,15 @@ def _start_fast_rotation() -> None:
     threading.Thread(target=run, name="fast-rotation", daemon=True).start()
 
 
-def _reset_for_new_market_day(today: date) -> None:
-    """Drop prior-session state before reseeding the new market session."""
-    global LAST_TICK_TS, TOTAL_TICKS, SCAN_CACHE_UPDATED_AT
+def _prepare_for_new_market_day(today: date) -> None:
+    """Reset live ticks while retaining the previous-session cache during reseeding."""
+    global LAST_TICK_TS, TOTAL_TICKS
     with DATA_LOCK:
-        HISTORY.clear()
         PRICE_HISTORY.clear()
         TICK_STATE.clear()
         LAST_TICK_TS = 0.0
         TOTAL_TICKS = 0
-    with SCAN_CACHE_LOCK:
-        for timeframe in SCAN_CACHE:
-            for universe in SCAN_CACHE[timeframe]:
-                SCAN_CACHE[timeframe][universe] = []
-        SECTOR_FLOW_CACHE.clear()
-        SCAN_CACHE_UPDATED_AT = 0.0
-    log.info("Started fresh market session for %s", today.isoformat())
+    log.info("Preparing fresh market session for %s", today.isoformat())
 
 
 def _start_daily_refresh() -> None:
@@ -400,8 +402,14 @@ def _start_daily_refresh() -> None:
         while True:
             now = datetime.now(IST)
             seeded_date = HISTORY_SEED_DATE
-            if market_is_open(now) and seeded_date is not None and seeded_date < now.date() and _has_current_session_data(now):
-                _reset_for_new_market_day(now.date())
+            if (
+                now.weekday() < 5
+                and now.time() >= PREMARKET_SEED_TIME
+                and seeded_date is not None
+                and seeded_date < now.date()
+                and not SEED_IN_PROGRESS
+            ):
+                _prepare_for_new_market_day(now.date())
                 try:
                     _start_history_seed(force=True)
                 except Exception:

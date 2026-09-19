@@ -31,11 +31,12 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Serves `/api/scan` for the page and `/api/health` for feed status.
 - Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
 - Recomputes detailed rows and whole-universe Sector flow in a background cache; `/api/scan` only reads that cache, so browser polling does not rerun indicators or RFactor calculations.
-- Detects the next market day, clears prior-session ticks/history/cache, and reseeds fresh Kite history automatically without requiring a Render restart.
+- Detects the next calendar session, clears prior-session live ticks, and reseeds fresh Kite history automatically without requiring a Render restart; the previous-session cache stays visible while this happens.
 - Outside market hours, the page labels loaded data as `Previous session` until the next session begins.
 - If the service restarts off-hours, the intraday view rebuilds each stock from the latest completed session’s full OHLC and volume, so ranking still reflects that session’s momentum.
 - A weekday is not treated as a new trading session until current-session candles or ticks actually exist, so weekends and exchange holidays continue showing the latest completed session.
 - When current-session data is absent, continuation, volume confirmation, and volume ratio all use the latest available trading session rather than the calendar date.
+- The pre-market seed starts at `07:30 IST` by default (`PREMARKET_SEED_TIME` can change it), so current history is normally ready before the `09:15 IST` open.
 
 Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
 `SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).
