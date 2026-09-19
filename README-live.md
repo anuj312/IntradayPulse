@@ -34,6 +34,7 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Outside market hours, the page labels loaded data as `Previous session` until the next session begins.
 - If the service restarts off-hours, the intraday view rebuilds each stock from the latest completed session’s full OHLC and volume, so ranking still reflects that session’s momentum.
 - A weekday is not treated as a new trading session until current-session candles or ticks actually exist, so weekends and exchange holidays continue showing the latest completed session.
+- When current-session data is absent, continuation, volume confirmation, and volume ratio all use the latest available trading session rather than the calendar date.
 
 Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
 `SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).

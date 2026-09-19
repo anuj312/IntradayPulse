@@ -532,14 +532,11 @@ def _volume_ratio(token: int, timeframe: str, volume: float, now: datetime) -> f
         return max(0.0, volume / (baseline + 1e-9))
     baseline = float(daily["volume"].tail(20).mean())
     market_open = now.replace(hour=9, minute=15, second=0, microsecond=0)
-    market_close = now.replace(hour=15, minute=30, second=0, microsecond=0)
-    elapsed = (now - market_open).total_seconds() / 60.0
-    if now <= market_open:
-        elapsed = 1.0
-    else:
-        elapsed = max(1.0, min(375.0, elapsed))
-    if now >= market_close:
+    if not market_is_open(now) or not _has_current_session_data(now):
         elapsed = 375.0
+    else:
+        elapsed = (now - market_open).total_seconds() / 60.0
+        elapsed = max(1.0, min(375.0, elapsed))
     expected = baseline * (elapsed / 375.0)
     return max(0.0, volume / (expected + 1e-9))
 
@@ -588,6 +585,9 @@ def _session_trend_quality(
     if frame.empty:
         return 1.0
     today = frame[frame["date"].dt.date == now.date()]
+    if today.empty and not live_candles:
+        latest_date = frame.iloc[-1]["date"].date()
+        today = frame[frame["date"].dt.date == latest_date]
     expected_direction = 1.0 if change >= 0 else -1.0
     quality = 1.0
     if not today.empty:
@@ -625,7 +625,11 @@ def _volume_confirmation(
         return 1.0
     intraday = frame[frame["volume"] > 0]
     today = intraday[intraday["date"].dt.date == now.date()]
-    history = intraday[intraday["date"].dt.date < now.date()]
+    session_date = now.date()
+    if today.empty and not live_candles:
+        session_date = intraday.iloc[-1]["date"].date() if not intraday.empty else now.date()
+        today = intraday[intraday["date"].dt.date == session_date]
+    history = intraday[intraday["date"].dt.date < session_date]
     baseline_source = history["volume"].tail(120) if not history.empty else intraday["volume"].iloc[:-3]
     baseline = float(baseline_source.median()) if not baseline_source.empty else 0.0
     if baseline <= 0:
