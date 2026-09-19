@@ -369,10 +369,10 @@
         <div class="toolbar-divider"></div>
         <div class="segmented" data-group="type"><button class="active" data-value="intraday" type="button">Intraday</button><button data-value="regular" type="button">Regular</button></div>
         <div class="select-wrap"><select id="volatility" aria-label="Volatility"><option value="all">Volatility: All</option><option value="high">High volatility</option><option value="medium">Medium volatility</option><option value="low">Low volatility</option></select></div>
-        <div class="select-wrap"><select id="universe" aria-label="Universe"><option value="stocks">Stocks</option><option value="index">Index</option></select></div>
+          <div class="select-wrap"><select id="universe" aria-label="Universe"><option value="stocks">All stocks</option><option value="index">Index</option></select></div>
         <div class="select-wrap" id="sectorWrap"><select id="sector" aria-label="Sector"><option value="all">All sectors</option></select></div>
         <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search symbol"></label>
-        <div class="mode-note">Sample market snapshot • controls update the research view</div>
+          <div class="mode-note" id="modeNote">All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.</div>
       </section>
       <div id="momentumView">
       <section class="summary-grid" aria-label="Scan summary">
@@ -394,7 +394,7 @@
       <div class="footer-note"><span class="shield">⬢</span><span>Illustrative scanner snapshot. Connect a market-data feed before treating values as live.</span></div>
       </div>
       <section class="panel flow-panel view-hidden" id="sectorFlow" aria-label="Sector flow">
-        <div class="flow-head"><div><h2 class="flow-title">Sector flow</h2><p class="flow-caption">Average percentage change across the current universe</p><span class="flow-scroll-hint">Auto-sized for your screen</span></div><span class="flow-sort">Sorted by %CHG mean ↓</span></div>
+         <div class="flow-head"><div><h2 class="flow-title">Sector flow</h2><p class="flow-caption">Average percentage change across the whole universe</p><span class="flow-scroll-hint">Auto-sized for your screen</span></div><span class="flow-sort">Sorted by %CHG mean ↓</span></div>
         <div class="flow-list" id="sectorFlowRows"></div>
       </section>
     </main>
@@ -429,7 +429,7 @@
     const INDEX_DEFINITIONS = [
       ["NIFTY 50", "NIFTY50"], ["BANK NIFTY", "BANKNIFTY"], ["NIFTY IT", "NIFTYIT"], ["NIFTY AUTO", "NIFTYAUTO"], ["NIFTY METAL", "NIFTYMETAL"], ["NIFTY PHARMA", "NIFTYPHARMA"], ["NIFTY ENERGY", "NIFTYENERGY"], ["NIFTY REALTY", "NIFTYREALTY"]
     ];
-    const state = { direction: "all", type: "intraday", volatility: "all", universe: "stocks", sector: "all", search: "", sort: "rank", view: "table", seed: 1, liveRows: null, live: false, feedStatus: "offline", currentRows: [], ticks: null };
+    const state = { direction: "all", type: "intraday", volatility: "all", universe: "stocks", sector: "all", search: "", sort: "rank", view: "table", seed: 1, liveRows: null, live: false, feedStatus: "offline", currentRows: [], sectorFlow: null, ticks: null, seedProgress: { done: 0, total: 0, errors: 0 }, fastMode: false, universeSize: 0, detailSymbols: 0 };
     const els = { rows: document.getElementById("rows"), empty: document.getElementById("empty"), sector: document.getElementById("sector"), sectorWrap: document.getElementById("sectorWrap"), search: document.getElementById("search"), volatility: document.getElementById("volatility"), universe: document.getElementById("universe") };
 
     Object.keys(SECTOR_DEFINITIONS).forEach(sector => {
@@ -499,19 +499,24 @@
     }
     function renderSectorFlow(allRows) {
       const container = document.getElementById("sectorFlowRows");
-      const grouped = new Map();
-      if (state.universe === "index") {
-        allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
+      let items;
+      if (state.universe !== "index" && Array.isArray(state.sectorFlow) && state.sectorFlow.length) {
+        items = state.sector === "all" ? state.sectorFlow : state.sectorFlow.filter(item => item.name === state.sector);
       } else {
-        const bySymbol = new Map(allRows.map(row => [row.symbol, row]));
-        const definitions = state.sector === "all" ? SECTOR_DEFINITIONS : { [state.sector]: SECTOR_DEFINITIONS[state.sector] || [] };
-        Object.entries(definitions).forEach(([sector, symbols]) => {
-          const rows = symbols.map(symbol => bySymbol.get(symbol)).filter(Boolean);
-          if (!rows.length) return;
-          grouped.set(sector, { rows, sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0), count: rows.length, up: rows.filter(row => row.change >= 0).length, down: rows.filter(row => row.change < 0).length });
-        });
+        const grouped = new Map();
+        if (state.universe === "index") {
+          allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
+        } else {
+          const bySymbol = new Map(allRows.map(row => [row.symbol, row]));
+          const definitions = state.sector === "all" ? SECTOR_DEFINITIONS : { [state.sector]: SECTOR_DEFINITIONS[state.sector] || [] };
+          Object.entries(definitions).forEach(([sector, symbols]) => {
+            const rows = symbols.map(symbol => bySymbol.get(symbol)).filter(Boolean);
+            if (!rows.length) return;
+            grouped.set(sector, { rows, sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0), count: rows.length, up: rows.filter(row => row.change >= 0).length, down: rows.filter(row => row.change < 0).length });
+          });
+        }
+        items = [...grouped.entries()].map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) })).sort((a, b) => b.mean - a.mean);
       }
-      const items = [...grouped.entries()].map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) })).sort((a, b) => b.mean - a.mean);
       if (!items.length) { container.innerHTML = '<div class="flow-empty">Sector flow is waiting for data.</div>'; return; }
       const positiveMax = Math.max(...items.filter(item => item.mean > 0).map(item => item.mean), .01);
       const negativeMax = Math.max(...items.filter(item => item.mean < 0).map(item => Math.abs(item.mean)), .01);
@@ -578,14 +583,16 @@
       document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
        document.getElementById("tableCaption").textContent = `Lowest rank is strongest • recent continuation is weighted • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
-      const feedLabels = { live: "Live", snapshot: "Snapshot", seeding: "Seeding", offline: "Offline" };
-      const feedLabel = feedLabels[state.feedStatus] || "Offline";
+      const feedLabels = { live: "Live", snapshot: "Snapshot", offline: "Offline" };
+      const seedLabel = `Seeding (${Number(state.seedProgress.done || 0)}/${Number(state.seedProgress.total || 0)})`;
+      const feedLabel = state.feedStatus === "seeding" ? seedLabel : feedLabels[state.feedStatus] || "Offline";
       const feedChip = document.getElementById("feedChip");
       feedChip.className = `feed-chip ${state.feedStatus}`;
       document.getElementById("feedChipText").textContent = feedLabel;
       document.getElementById("ticksChip").textContent = state.ticks === null ? "Ticks --" : `Ticks ${Number(state.ticks).toLocaleString()}`;
-      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? "Live market / NSE universe" : state.feedStatus === "snapshot" ? "Market snapshot / NSE universe" : state.feedStatus === "seeding" ? "Loading market history / NSE universe" : "Market pulse / NSE universe · offline";
-      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Market snapshot" : state.feedStatus === "seeding" ? "History loading" : "Offline";
+      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? `Live / ${state.detailSymbols || state.universeSize || "all"} detailed / ${state.universeSize || "whole"} watched` : state.feedStatus === "snapshot" ? "Market snapshot / NSE universe" : state.feedStatus === "seeding" ? `${seedLabel} / whole universe watched` : "Market pulse / NSE universe · offline";
+      document.getElementById("modeNote").textContent = state.fastMode ? "Fast mode watches the whole universe and calculates detailed indicators for the strongest 25." : "All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.";
+      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Market snapshot" : state.feedStatus === "seeding" ? seedLabel : "Offline";
       renderSectorFlow(allRows);
       document.querySelector("table").classList.toggle("compact", state.view === "compact");
       els.empty.hidden = filtered.length !== 0;
@@ -616,6 +623,11 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = await response.json();
         if (!Array.isArray(payload.rows)) throw new Error("Invalid scan payload");
+        if (payload.seed) state.seedProgress = payload.seed;
+        if (Array.isArray(payload.sector_flow)) state.sectorFlow = payload.sector_flow;
+        if (typeof payload.fast_mode === "boolean") state.fastMode = payload.fast_mode;
+        if (Number.isFinite(Number(payload.universe_size))) state.universeSize = Number(payload.universe_size);
+        if (Number.isFinite(Number(payload.detail_symbols))) state.detailSymbols = Number(payload.detail_symbols);
         if (!payload.rows.length && payload.live !== true) {
           state.liveRows = null;
           state.live = false;
@@ -627,7 +639,7 @@
         state.liveRows = payload.rows;
         state.live = payload.live === true;
         state.ticks = Number.isFinite(Number(payload.ticks)) ? Number(payload.ticks) : state.ticks;
-        state.feedStatus = state.live ? "live" : payload.status === "market_closed" ? "snapshot" : payload.status === "seeding" ? "seeding" : "offline";
+        state.feedStatus = payload.status === "seeding" ? "seeding" : state.live ? "live" : payload.status === "market_closed" ? "snapshot" : "offline";
         const stamp = payload.updated_at ? `Live snapshot • ${payload.updated_at}` : (state.live ? "Live snapshot" : "Waiting for feed");
         document.getElementById("updatedAt").textContent = stamp;
         render();

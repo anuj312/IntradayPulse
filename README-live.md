@@ -20,6 +20,8 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 ## What the server does
 
 - Loads the supplied NSE sector universe from `sector_definitions.py`.
+- By default, watches and calculates detailed indicators for every stock in the configured NSE universe.
+- Sector flow is calculated separately from quote ticks across the whole NSE universe.
 - Uses Kite historical candles to seed 5-minute and daily indicators.
 - Uses KiteTicker full-mode ticks for current price, volume, and five-point sparklines.
 - Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, volatility bucket, and momentum rank. An early spike loses rank when the stock goes sideways instead of continuing; intraday momentum uses 5-minute candles from the open, with roughly the last 15 minutes weighted most heavily.
@@ -27,6 +29,10 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Shows the cumulative KiteTicker tick count beside the feed status.
 - Serves `/api/scan` for the page and `/api/health` for feed status.
 - Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
+- Recomputes detailed rows and whole-universe Sector flow in a background cache; `/api/scan` only reads that cache, so browser polling does not rerun indicators or RFactor calculations.
+
+Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
+`SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).
 
 The initial historical seed is deliberately paced and can take a few minutes for the full universe. Until enough history is available, the page remains in demo mode. Kite access tokens normally expire daily, so provide a fresh token before starting the server.
 

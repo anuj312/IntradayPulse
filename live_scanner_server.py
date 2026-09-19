@@ -42,6 +42,11 @@ SEED_DAYS_5M = int(os.getenv("SEED_DAYS_5M", "15"))
 SEED_DAYS_DAILY = int(os.getenv("SEED_DAYS_DAILY", "240"))
 TICK_STALE_SEC = int(os.getenv("TICK_STALE_SEC", "20"))
 PORT = int(os.getenv("PORT", "8050"))
+FAST_MODE = os.getenv("FAST_MODE", "false").strip().lower() not in {"0", "false", "no", "off"}
+FAST_SYMBOL_LIMIT = int(os.getenv("FAST_SYMBOL_LIMIT", "25"))
+FAST_SELECTION_WAIT_SEC = int(os.getenv("FAST_SELECTION_WAIT_SEC", "20"))
+FAST_RESELECT_SEC = int(os.getenv("FAST_RESELECT_SEC", "300"))
+SCAN_COMPUTE_EVERY_SEC = float(os.getenv("SCAN_COMPUTE_EVERY_SEC", "3"))
 
 app = Flask(__name__)
 kite: Optional[KiteConnect] = None
@@ -55,10 +60,23 @@ LAST_TICK_TS = 0.0
 TOTAL_TICKS = 0
 TICKER_CONNECTED = False
 TICKER_STARTED = False
+TICKER_WS: Any = None
 SEED_STARTED = False
 LIVE_INITIALIZED = False
 LIVE_INIT_LOCK = threading.Lock()
 SEED_PROGRESS = {"done": 0, "total": 0, "errors": 0}
+DETAIL_SYMBOLS: set[str] = set()
+SEED_IN_PROGRESS = False
+FAST_ROTATION_STARTED = False
+SCAN_CACHE: Dict[str, Dict[str, List[dict]]] = {
+    "intraday": {"stocks": [], "index": []},
+    "regular": {"stocks": [], "index": []},
+}
+SECTOR_FLOW_CACHE: List[dict] = []
+SCAN_CACHE_UPDATED_AT = 0.0
+SCAN_COMPUTE_STARTED = False
+SCAN_CACHE_LOCK = threading.RLock()
+SCAN_COMPUTE_START_LOCK = threading.Lock()
 
 
 def market_is_open(now: Optional[datetime] = None) -> bool:
@@ -143,8 +161,23 @@ def _update_tick(tick: dict) -> None:
     history.append((timestamp, ltp, volume, flow_delta))
 
 
+def _set_ticker_modes(selected_symbols: set[str]) -> None:
+    with DATA_LOCK:
+        ticker_ws = TICKER_WS
+        all_tokens = sorted(TOKEN_TO_SYMBOL)
+        selected_tokens = [SYMBOL_TO_TOKEN[symbol] for symbol in selected_symbols if symbol in SYMBOL_TO_TOKEN]
+    if not ticker_ws:
+        return
+    try:
+        ticker_ws.set_mode(ticker_ws.MODE_QUOTE, all_tokens)
+        if selected_tokens:
+            ticker_ws.set_mode(ticker_ws.MODE_FULL, selected_tokens)
+    except Exception:
+        log.exception("Unable to update Fast mode ticker subscriptions")
+
+
 def _start_ticker() -> None:
-    global TICKER_STARTED, TICKER_CONNECTED, LAST_TICK_TS
+    global TICKER_STARTED, TICKER_CONNECTED, TICKER_WS, LAST_TICK_TS
     if TICKER_STARTED or kite is None or not SYMBOL_TO_TOKEN:
         return
     TICKER_STARTED = True
@@ -157,11 +190,16 @@ def _start_ticker() -> None:
                 ticker = KiteTicker(API_KEY, ACCESS_TOKEN)
 
                 def on_connect(ws, _response):
-                    global TICKER_CONNECTED
+                    global TICKER_CONNECTED, TICKER_WS
+                    TICKER_WS = ws
                     ws.subscribe(tokens)
-                    ws.set_mode(ws.MODE_FULL, tokens)
+                    ws.set_mode(ws.MODE_QUOTE, tokens)
+                    with DATA_LOCK:
+                        selected_tokens = [SYMBOL_TO_TOKEN[symbol] for symbol in DETAIL_SYMBOLS if symbol in SYMBOL_TO_TOKEN]
+                    if selected_tokens:
+                        ws.set_mode(ws.MODE_FULL, selected_tokens)
                     TICKER_CONNECTED = True
-                    log.info("KiteTicker connected and subscribed to %s tokens", len(tokens))
+                    log.info("KiteTicker connected: %s quote tokens, %s full-depth tokens", len(tokens), len(selected_tokens))
 
                 def on_ticks(_ws, ticks):
                     global LAST_TICK_TS, TOTAL_TICKS
@@ -173,8 +211,9 @@ def _start_ticker() -> None:
                             LAST_TICK_TS = time.time()
 
                 def on_close(_ws, _code, _reason):
-                    global TICKER_CONNECTED
+                    global TICKER_CONNECTED, TICKER_WS
                     TICKER_CONNECTED = False
+                    TICKER_WS = None
                     log.warning("KiteTicker connection closed")
 
                 ticker.on_connect = on_connect
@@ -188,6 +227,49 @@ def _start_ticker() -> None:
 
 
     threading.Thread(target=run, name="kite-ticker", daemon=True).start()
+
+
+def _fast_symbol_candidates(include_fallback: bool = True) -> list[str]:
+    candidates = []
+    with DATA_LOCK:
+        for symbol, token in SYMBOL_TO_TOKEN.items():
+            tick = TICK_STATE.get(token) or {}
+            ltp = _as_float(tick.get("ltp"))
+            ohlc = tick.get("ohlc") if isinstance(tick.get("ohlc"), dict) else {}
+            open_price = _as_float(ohlc.get("open"))
+            volume = _as_float(tick.get("volume")) or 0.0
+            if not ltp or not open_price:
+                continue
+            change = abs((ltp - open_price) / open_price * 100.0)
+            candidates.append((change, volume, symbol))
+    candidates.sort(reverse=True)
+    selected = [symbol for _, _, symbol in candidates[:FAST_SYMBOL_LIMIT]]
+    if not include_fallback:
+        return selected
+    fallback = list(dict.fromkeys(SECTOR_DEFINITIONS.get("NIFTY_50", []) + list(ALL_SYMBOLS)))
+    for symbol in fallback:
+        if len(selected) >= FAST_SYMBOL_LIMIT:
+            break
+        if symbol in SYMBOL_TO_TOKEN and symbol not in selected:
+            selected.append(symbol)
+    return selected
+
+
+def _select_fast_symbols() -> list[str]:
+    deadline = time.time() + FAST_SELECTION_WAIT_SEC
+    while time.time() < deadline:
+        live_selected = _fast_symbol_candidates(include_fallback=False)
+        if len(live_selected) >= FAST_SYMBOL_LIMIT or not market_is_open():
+            break
+        time.sleep(1)
+    selected = _fast_symbol_candidates()
+    with DATA_LOCK:
+        DETAIL_SYMBOLS.clear()
+        DETAIL_SYMBOLS.update(selected[:FAST_SYMBOL_LIMIT])
+        selected_symbols = set(DETAIL_SYMBOLS)
+    _set_ticker_modes(selected_symbols)
+    log.info("Fast mode selected %s/%s symbols for detailed history", len(DETAIL_SYMBOLS), len(SYMBOL_TO_TOKEN))
+    return list(DETAIL_SYMBOLS)
 
 
 def _seed_symbol(symbol: str, token: int) -> None:
@@ -218,23 +300,94 @@ def _seed_symbol(symbol: str, token: int) -> None:
         time.sleep(HISTORY_SLEEP_SEC)
 
 
+def _rotate_fast_symbols() -> None:
+    global SEED_IN_PROGRESS
+    if not FAST_MODE or not market_is_open() or not TICKER_CONNECTED:
+        return
+    selected = set(_fast_symbol_candidates())
+    with DATA_LOCK:
+        current = set(DETAIL_SYMBOLS)
+    added = selected - current
+    if not added:
+        return
+    _set_ticker_modes(selected)
+    SEED_IN_PROGRESS = True
+    SEED_PROGRESS.update({"done": 0, "total": len(added), "errors": 0})
+    ready = set()
+    try:
+        for symbol in sorted(added):
+            token = SYMBOL_TO_TOKEN.get(symbol)
+            if not token:
+                continue
+            try:
+                _seed_symbol(symbol, token)
+                with DATA_LOCK:
+                    if not HISTORY.get(token, {}).get("intraday", pd.DataFrame()).empty:
+                        ready.add(symbol)
+            except Exception:
+                SEED_PROGRESS["errors"] += 1
+                log.exception("Fast rotation history seed failed for %s", symbol)
+            finally:
+                SEED_PROGRESS["done"] += 1
+    finally:
+        with DATA_LOCK:
+            DETAIL_SYMBOLS.clear()
+            DETAIL_SYMBOLS.update((current & selected) | ready)
+            active_symbols = set(DETAIL_SYMBOLS)
+        _set_ticker_modes(active_symbols)
+        SEED_IN_PROGRESS = False
+    log.info("Fast mode rotated: %s detailed symbols, %s new histories", len(active_symbols), len(ready))
+
+
+def _start_fast_rotation() -> None:
+    global FAST_ROTATION_STARTED
+    if not FAST_MODE or FAST_ROTATION_STARTED or FAST_RESELECT_SEC <= 0:
+        return
+    FAST_ROTATION_STARTED = True
+
+    def run() -> None:
+        while True:
+            time.sleep(FAST_RESELECT_SEC)
+            try:
+                _rotate_fast_symbols()
+            except Exception:
+                log.exception("Fast mode rotation failed")
+
+    threading.Thread(target=run, name="fast-rotation", daemon=True).start()
+
+
 def _start_history_seed() -> None:
-    global SEED_STARTED
+    global SEED_IN_PROGRESS, SEED_STARTED
     if SEED_STARTED or kite is None:
         return
     SEED_STARTED = True
-    tokens = sorted(TOKEN_TO_SYMBOL.items())
+    if FAST_MODE:
+        SEED_PROGRESS["total"] = FAST_SYMBOL_LIMIT
+    SEED_IN_PROGRESS = True
+    if FAST_MODE:
+        selected_symbols = _select_fast_symbols()
+    else:
+        selected_symbols = list(SYMBOL_TO_TOKEN)
+        with DATA_LOCK:
+            DETAIL_SYMBOLS.clear()
+            DETAIL_SYMBOLS.update(selected_symbols)
+    tokens = sorted((token, symbol) for symbol, token in SYMBOL_TO_TOKEN.items() if symbol in selected_symbols)
     SEED_PROGRESS["total"] = len(tokens)
 
     def run() -> None:
-        for token, symbol in tokens:
-            try:
-                _seed_symbol(symbol, token)
-            except Exception:
-                SEED_PROGRESS["errors"] += 1
-                log.exception("History seed failed for %s", symbol)
-            finally:
-                SEED_PROGRESS["done"] += 1
+        global SEED_IN_PROGRESS
+        try:
+            for token, symbol in tokens:
+                try:
+                    _seed_symbol(symbol, token)
+                except Exception:
+                    SEED_PROGRESS["errors"] += 1
+                    log.exception("History seed failed for %s", symbol)
+                finally:
+                    SEED_PROGRESS["done"] += 1
+        finally:
+            SEED_IN_PROGRESS = False
+            _start_fast_rotation()
 
     threading.Thread(target=run, name="history-seed", daemon=True).start()
 
@@ -615,15 +768,20 @@ def _rank(rows: List[dict]) -> List[dict]:
     rows.sort(key=lambda row: float(row.get("score") or 0.0), reverse=True)
     for position, row in enumerate(rows, start=1):
         row["rank"] = position
+        row["_scan_score"] = row.get("score")
         row.pop("score", None)
     return rows
 
 
 def build_rows(timeframe: str, universe: str, sector: str) -> List[dict]:
+    sector = sector.upper()
+    with DATA_LOCK:
+        detail_symbols = set(DETAIL_SYMBOLS)
     if universe == "index":
         rows = []
         for name, symbols in INDEX_GROUPS.items():
-            children = [_build_row(symbol, "INDEX", timeframe) for symbol in dict.fromkeys(symbols)]
+            selected = [symbol for symbol in dict.fromkeys(symbols) if not FAST_MODE or symbol in detail_symbols]
+            children = [_build_row(symbol, "INDEX", timeframe) for symbol in selected]
             aggregate = _aggregate_index(name, [row for row in children if row])
             if aggregate:
                 rows.append(aggregate)
@@ -634,8 +792,97 @@ def build_rows(timeframe: str, universe: str, sector: str) -> List[dict]:
         for symbol in symbols:
             membership.setdefault(symbol, group)
     symbols = list(dict.fromkeys(SECTOR_DEFINITIONS.get(sector, []))) if sector != "all" else list(membership)
+    if FAST_MODE:
+        symbols = [symbol for symbol in symbols if symbol in detail_symbols]
     rows = [_build_row(symbol, membership.get(symbol, sector), timeframe) for symbol in symbols]
     return _rank([row for row in rows if row])
+
+
+def _rows_from_cache(timeframe: str, universe: str, sector: str) -> List[dict]:
+    """Return a request-specific view without recalculating indicators."""
+    with SCAN_CACHE_LOCK:
+        rows = [dict(row) for row in SCAN_CACHE.get(timeframe, {}).get(universe, [])]
+    if universe == "stocks" and sector != "ALL":
+        rows = [row for row in rows if row.get("sector") == sector]
+    rows.sort(key=lambda row: float(row.get("_scan_score") or 0.0), reverse=True)
+    for position, row in enumerate(rows, start=1):
+        row["rank"] = position
+        row.pop("_scan_score", None)
+    return rows
+
+
+def _refresh_scan_cache() -> None:
+    snapshots = {
+        timeframe: {
+            "stocks": build_rows(timeframe, "stocks", "ALL"),
+            "index": build_rows(timeframe, "index", "ALL"),
+        }
+        for timeframe in ("intraday", "regular")
+    }
+    sector_flow = build_sector_flow()
+    global SCAN_CACHE_UPDATED_AT
+    with SCAN_CACHE_LOCK:
+        for timeframe, universes in snapshots.items():
+            SCAN_CACHE[timeframe]["stocks"] = universes["stocks"]
+            SCAN_CACHE[timeframe]["index"] = universes["index"]
+        SECTOR_FLOW_CACHE.clear()
+        SECTOR_FLOW_CACHE.extend(sector_flow)
+        SCAN_CACHE_UPDATED_AT = time.time()
+
+
+def _start_scan_compute() -> None:
+    global SCAN_COMPUTE_STARTED
+    with SCAN_COMPUTE_START_LOCK:
+        if SCAN_COMPUTE_STARTED:
+            return
+        SCAN_COMPUTE_STARTED = True
+
+    def run() -> None:
+        while True:
+            started = time.monotonic()
+            try:
+                _refresh_scan_cache()
+            except Exception:
+                log.exception("Background scan cache refresh failed")
+            elapsed = time.monotonic() - started
+            time.sleep(max(0.1, SCAN_COMPUTE_EVERY_SEC - elapsed))
+
+    threading.Thread(target=run, name="scan-compute", daemon=True).start()
+
+
+def build_sector_flow() -> List[dict]:
+    membership: Dict[str, str] = {}
+    for group, symbols in SECTOR_DEFINITIONS.items():
+        for symbol in symbols:
+            membership.setdefault(symbol, group)
+    grouped: Dict[str, dict] = {}
+    with DATA_LOCK:
+        ticks = {symbol: dict(TICK_STATE.get(token) or {}) for symbol, token in SYMBOL_TO_TOKEN.items()}
+    for symbol, tick in ticks.items():
+        sector = membership.get(symbol)
+        if not sector:
+            continue
+        ltp = _as_float(tick.get("ltp"))
+        ohlc = tick.get("ohlc") if isinstance(tick.get("ohlc"), dict) else {}
+        open_price = _as_float(ohlc.get("open"))
+        if not ltp or not open_price:
+            continue
+        change = (ltp - open_price) / open_price * 100.0
+        group = grouped.setdefault(sector, {"name": sector, "sum": 0.0, "count": 0, "up": 0, "down": 0})
+        group["sum"] += change
+        group["count"] += 1
+        group["up"] += int(change >= 0)
+        group["down"] += int(change < 0)
+    return [
+        {
+            "name": group["name"],
+            "mean": round(group["sum"] / max(group["count"], 1), 2),
+            "count": group["count"],
+            "up": group["up"],
+            "down": group["down"],
+        }
+        for group in sorted(grouped.values(), key=lambda item: item["sum"] / max(item["count"], 1), reverse=True)
+    ]
 
 
 def _feed_status() -> tuple[str, bool]:
@@ -644,10 +891,10 @@ def _feed_status() -> tuple[str, bool]:
     if not market_is_open():
         return "market_closed", False
     fresh = LAST_TICK_TS and (time.time() - LAST_TICK_TS) <= TICK_STALE_SEC
+    if SEED_IN_PROGRESS:
+        return "seeding", bool(TICKER_CONNECTED and fresh)
     if TICKER_CONNECTED and fresh:
         return "live", True
-    if SEED_PROGRESS["done"] < SEED_PROGRESS["total"]:
-        return "seeding", False
     return "waiting_for_ticks", False
 
 
@@ -665,8 +912,12 @@ def health():
         "market_open": market_is_open(),
         "seed": dict(SEED_PROGRESS),
         "symbols": len(SYMBOL_TO_TOKEN),
+        "fast_mode": FAST_MODE,
+        "detail_symbols": len(DETAIL_SYMBOLS),
         "ticks": TOTAL_TICKS,
         "last_tick": datetime.fromtimestamp(LAST_TICK_TS, IST).isoformat() if LAST_TICK_TS else None,
+        "cache_ready": bool(SCAN_CACHE_UPDATED_AT),
+        "cache_updated_at": datetime.fromtimestamp(SCAN_CACHE_UPDATED_AT, IST).isoformat() if SCAN_CACHE_UPDATED_AT else None,
     })
 
 
@@ -680,15 +931,22 @@ def scan():
     if universe not in {"stocks", "index"}:
         return jsonify({"error": "universe must be stocks or index"}), 400
     if sector not in SECTOR_DEFINITIONS and sector != "ALL":
-        sector = "all"
-    rows = build_rows(timeframe, universe, sector.lower())
+        sector = "ALL"
+    rows = _rows_from_cache(timeframe, universe, sector)
+    with SCAN_CACHE_LOCK:
+        sector_flow = [dict(item) for item in SECTOR_FLOW_CACHE]
+        cache_updated_at = SCAN_CACHE_UPDATED_AT
     status, live = _feed_status()
     return jsonify({
         "live": live,
         "status": status,
         "market_open": market_is_open(),
-        "updated_at": datetime.now(IST).strftime("%H:%M:%S IST"),
+        "updated_at": datetime.fromtimestamp(cache_updated_at, IST).strftime("%H:%M:%S IST") if cache_updated_at else None,
         "seed": dict(SEED_PROGRESS),
+        "fast_mode": FAST_MODE,
+        "universe_size": len(SYMBOL_TO_TOKEN),
+        "detail_symbols": len(DETAIL_SYMBOLS),
+        "sector_flow": sector_flow,
         "ticks": TOTAL_TICKS,
         "rows": rows,
     })
@@ -701,6 +959,7 @@ def initialize_live() -> None:
         if LIVE_INITIALIZED:
             return
         LIVE_INITIALIZED = True
+    _start_scan_compute()
     try:
         load_instruments()
         _start_history_seed()
