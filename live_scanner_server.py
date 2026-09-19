@@ -940,7 +940,7 @@ def _feed_status() -> tuple[str, bool]:
     if kite is None or not SYMBOL_TO_TOKEN:
         return "missing_credentials", False
     if not market_is_open():
-        return "market_closed", False
+        return "previous_session", False
     fresh = LAST_TICK_TS and (time.time() - LAST_TICK_TS) <= TICK_STALE_SEC
     if SEED_IN_PROGRESS:
         return "seeding", bool(TICKER_CONNECTED and fresh)

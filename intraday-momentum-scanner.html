@@ -584,16 +584,16 @@
       document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
         document.getElementById("tableCaption").textContent = `Lowest rank is strongest • RFactor and continuation are weighted • sideways moves rank lower • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
-      const feedLabels = { live: "Live", snapshot: "Snapshot", offline: "Offline" };
+      const feedLabels = { live: "Live", snapshot: "Previous session", offline: "Offline" };
       const seedLabel = `Seeding (${Number(state.seedProgress.done || 0)}/${Number(state.seedProgress.total || 0)})`;
       const feedLabel = state.feedStatus === "seeding" ? seedLabel : feedLabels[state.feedStatus] || "Offline";
       const feedChip = document.getElementById("feedChip");
       feedChip.className = `feed-chip ${state.feedStatus}`;
       document.getElementById("feedChipText").textContent = feedLabel;
       document.getElementById("ticksChip").textContent = state.ticks === null ? "Ticks --" : `Ticks ${Number(state.ticks).toLocaleString()}`;
-      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? `Live / ${state.detailSymbols || state.universeSize || "all"} detailed / ${state.universeSize || "whole"} watched` : state.feedStatus === "snapshot" ? "Market snapshot / NSE universe" : state.feedStatus === "seeding" ? `${seedLabel} / whole universe watched` : "Market pulse / NSE universe · offline";
+      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? `Live / ${state.detailSymbols || state.universeSize || "all"} detailed / ${state.universeSize || "whole"} watched` : state.feedStatus === "snapshot" ? "Previous session / NSE universe" : state.feedStatus === "seeding" ? `${seedLabel} / whole universe watched` : "Market pulse / NSE universe · offline";
       document.getElementById("modeNote").textContent = state.fastMode ? "Fast mode watches the whole universe and calculates detailed indicators for the strongest 25." : "All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.";
-      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Market snapshot" : state.feedStatus === "seeding" ? seedLabel : "Offline";
+      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Previous session" : state.feedStatus === "seeding" ? seedLabel : "Offline";
       renderSectorFlow(allRows);
       document.querySelector("table").classList.toggle("compact", state.view === "compact");
       els.empty.hidden = filtered.length !== 0;
@@ -632,16 +632,18 @@
         if (!payload.rows.length && payload.live !== true) {
           state.liveRows = null;
           state.live = false;
-          state.feedStatus = payload.status === "seeding" ? "seeding" : "offline";
+          const previousSession = payload.status === "previous_session" || payload.status === "market_closed";
+          state.feedStatus = payload.status === "seeding" ? "seeding" : previousSession ? "snapshot" : "offline";
           render();
-          if (manual) showToast(payload.status === "seeding" ? "History is still loading" : "Live feed unavailable; demo snapshot shown");
+          if (manual) showToast(payload.status === "seeding" ? "History is still loading" : previousSession ? "Showing previous session data" : "Live feed unavailable; demo snapshot shown");
           return;
         }
         state.liveRows = payload.rows;
         state.live = payload.live === true;
         state.ticks = Number.isFinite(Number(payload.ticks)) ? Number(payload.ticks) : state.ticks;
-        state.feedStatus = payload.status === "seeding" ? "seeding" : state.live ? "live" : payload.status === "market_closed" ? "snapshot" : "offline";
-        const stamp = payload.updated_at ? `Live snapshot • ${payload.updated_at}` : (state.live ? "Live snapshot" : "Waiting for feed");
+        const previousSession = payload.status === "previous_session" || payload.status === "market_closed";
+        state.feedStatus = payload.status === "seeding" ? "seeding" : state.live ? "live" : previousSession ? "snapshot" : "offline";
+        const stamp = payload.updated_at ? `${state.feedStatus === "snapshot" ? "Previous session" : "Live snapshot"} • ${payload.updated_at}` : (state.live ? "Live snapshot" : "Waiting for feed");
         document.getElementById("updatedAt").textContent = stamp;
         render();
         if (manual) showToast(state.live ? "Live scan refreshed" : "Feed reachable; waiting for ticks");

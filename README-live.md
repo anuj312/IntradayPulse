@@ -31,6 +31,7 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
 - Recomputes detailed rows and whole-universe Sector flow in a background cache; `/api/scan` only reads that cache, so browser polling does not rerun indicators or RFactor calculations.
 - Detects the next market day, clears prior-session ticks/history/cache, and reseeds fresh Kite history automatically without requiring a Render restart.
+- Outside market hours, the page labels loaded data as `Previous session` until the next session begins.
 
 Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
 `SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).
