@@ -338,6 +338,31 @@
       .sector-modal-backdrop { padding: 12px; }
       .sector-modal { border-radius: 15px; }
     }
+
+    /* --- Slight font-size bump (readability) --- */
+.nav button { font-size: 14px; }
+
+.subhead { font-size: 14px; }
+
+.action { font-size: 13px; }
+.feed-chip, .ticks-chip { font-size: 11px; }
+
+.select-wrap select { font-size: 12px; }
+.search input { font-size: 12px; }
+
+.summary-label { font-size: 12px; }
+.summary-foot { font-size: 11px; }
+
+.panel-title, .flow-title, .side-title { font-size: 16px; }
+.panel-caption, .flow-caption { font-size: 12px; }
+
+th { font-size: 10px; }
+td { font-size: 12px; }
+
+.stock-name { font-size: 12px; }
+.stock-sector { font-size: 10px; }
+
+.metric-pill { font-size: 11px; }
   </style>
 </head>
 <body>
@@ -407,285 +432,545 @@
       <div class="sector-modal-rows" id="sectorModalRows"></div>
     </section>
   </div>
-  <script>
-    const SECTOR_DEFINITIONS = {
-      METAL: ["ADANIENT", "APLAPOLLO", "BHARATFORG", "COALINDIA", "HINDALCO", "HINDZINC", "JSWSTEEL", "JINDALSTEL", "NMDC", "NATIONALUM", "SAIL", "TATASTEEL", "VEDL"],
-      REALTY: ["PHOENIXLTD", "GODREJPROP", "LODHA", "OBEROIRLTY", "DLF", "PRESTIGE", "NBCC", "RVNL"],
-      ENERGY: ["RELIANCE", "ONGC", "IOC", "BPCL", "OIL", "NTPC", "POWERGRID", "POWERINDIA", "TATAPOWER", "JSWENERGY", "ADANIGREEN", "ADANIENSOL", "NHPC", "IREDA", "SUZLON", "INOXWIND", "WAAREEENER", "PREMIERENE", "PETRONET", "GAIL", "HINDPETRO"],
-      AUTO: ["BOSCHLTD", "TIINDIA", "HEROMOTOCO", "M&M", "EICHERMOT", "BAJAJ-AUTO", "ASHOKLEY", "MARUTI", "TVSMOTOR", "MOTHERSON", "SONACOMS", "UNOMINDA", "TMPV", "HYUNDAI", "AMBER"],
-      IT: ["INFY", "TCS", "HCLTECH", "WIPRO", "TECHM", "LTM", "MPHASIS", "KPITTECH", "COFORGE", "PERSISTENT", "TATAELXSI", "OFSS", "CAMS", "NAUKRI", "KAYNES"],
-      PHARMA: ["CIPLA", "ALKEM", "BIOCON", "DRREDDY", "MANKIND", "TORNTPHARM", "ZYDUSLIFE", "DIVISLAB", "LUPIN", "LAURUSLABS", "FORTIS", "AUROPHARMA", "GLENMARK", "SUNPHARMA", "MAXHEALTH", "APOLLOHOSP"],
-      FMCG: ["HINDUNILVR", "ITC", "NESTLEIND", "BRITANNIA", "DABUR", "MARICO", "COLPAL", "GODREJCP", "TATACONSUM", "PATANJALI", "UNITDSPR", "RADICO", "VBL", "DMART", "NYKAA", "ETERNAL", "SWIGGY", "TITAN", "TRENT", "VMM", "KALYANKJIL", "JUBLFOOD", "ASIANPAINT"],
-      CEMENT: ["ULTRACEMCO", "SHREECEM", "AMBUJACEM", "DALBHARAT", "GRASIM", "ASTRAL", "PIDILITIND", "SUPREMEIND"],
-      FINSERVICE: ["BAJFINANCE", "BAJAJFINSV", "BAJAJHLDNG", "ICICIPRULI", "ICICIGI", "SBILIFE", "HDFCLIFE", "LICI", "LICHSGFIN", "PNBHOUSING", "MUTHOOTFIN", "MANAPPURAM", "CHOLAFIN", "PFC", "RECLTD", "MOTILALOFS", "HDFCAMC", "360ONE", "KFINTECH", "NUVAMA", "PAYTM", "POLICYBZR", "SBICARD", "JIOFIN", "SHRIRAMFIN", "ANGELONE", "BSE", "CDSL", "MCX", "IRFC"],
-      BANK: ["HDFCBANK", "ICICIBANK", "AXISBANK", "KOTAKBANK", "IDFCFIRSTB", "FEDERALBNK", "INDUSINDBK", "AUBANK", "BANDHANBNK", "RBLBANK"],
-      PSUBANK: ["SBIN", "PNB", "BANKBARODA", "CANBK", "UNIONBANK", "BANKINDIA", "INDIANB"],
-      DURABLES: ["INDUSTOWER", "HAVELLS", "KEI", "POLYCAB", "CROMPTON", "VOLTAS", "PGEL", "DIXON", "SRF"],
-      LOGISTICS: ["CONCOR", "DELHIVERY", "INDIGO", "INDHOTEL", "IRCTC", "BLUESTARCO", "GMRAIRPORT", "PAGEIND", "UPL", "ADANIPORTS"],
-      DEFENCE: ["ABB", "BEL", "BDL", "BHEL", "CGPOWER", "CUMMINSIND", "HAL", "LT", "MAZDOCK", "COCHINSHIP", "SIEMENS", "SOLARINDS"],
-      NIFTY_50: ["ADANIENT", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJFINANCE", "BAJAJFINSV", "BEL", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INFY", "INDIGO", "ITC", "JIOFIN", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "MAXHEALTH", "NESTLEIND", "NTPC", "ONGC", "POWERGRID", "RELIANCE", "SBILIFE", "SHRIRAMFIN", "SBIN", "SUNPHARMA", "TCS", "TATACONSUM", "TATASTEEL", "TECHM", "TITAN", "TRENT", "ULTRACEMCO", "WIPRO", "TMPV", "ETERNAL"]
-    };
+  <!-- Load your sector definitions FIRST (separate file) -->
+<!-- <script src="/static/sector_definitions.js"></script> -->
 
-    const INDEX_DEFINITIONS = [
-      ["NIFTY 50", "NIFTY50"], ["BANK NIFTY", "BANKNIFTY"], ["NIFTY IT", "NIFTYIT"], ["NIFTY AUTO", "NIFTYAUTO"], ["NIFTY METAL", "NIFTYMETAL"], ["NIFTY PHARMA", "NIFTYPHARMA"], ["NIFTY ENERGY", "NIFTYENERGY"], ["NIFTY REALTY", "NIFTYREALTY"]
-    ];
-    const state = { direction: "all", type: "intraday", volatility: "all", universe: "stocks", sector: "all", search: "", sort: "rank", view: "table", seed: 1, liveRows: null, live: false, feedStatus: "offline", currentRows: [], ticks: null };
-    const els = { rows: document.getElementById("rows"), empty: document.getElementById("empty"), sector: document.getElementById("sector"), sectorWrap: document.getElementById("sectorWrap"), search: document.getElementById("search"), volatility: document.getElementById("volatility"), universe: document.getElementById("universe") };
+<script>
+  // Expects: window.SECTOR_DEFINITIONS = { SECTOR_NAME: ["SYMBOL1", ...], ... }
+  const SECTOR_DEFINITIONS = window.SECTOR_DEFINITIONS || {};
 
+  const TOP_LIMIT = 20;              // hard limit (UI + server request)
+  const DEMO_SYMBOL_LIMIT = 160;     // if offline, keep demo generation light
+  const POLL_MS = 7000;
+
+  const INDEX_DEFINITIONS = [
+    ["NIFTY 50", "NIFTY50"],
+    ["BANK NIFTY", "BANKNIFTY"],
+    ["NIFTY IT", "NIFTYIT"],
+    ["NIFTY AUTO", "NIFTYAUTO"],
+    ["NIFTY METAL", "NIFTYMETAL"],
+    ["NIFTY PHARMA", "NIFTYPHARMA"],
+    ["NIFTY ENERGY", "NIFTYENERGY"],
+    ["NIFTY REALTY", "NIFTYREALTY"]
+  ];
+
+  const state = {
+    direction: "all",
+    type: "intraday",
+    volatility: "all",
+    universe: "stocks",
+    sector: "all",
+    search: "",
+    sort: "rank",
+    view: "table",
+    seed: 1,
+    liveRows: null,
+    live: false,
+    feedStatus: "offline",
+    currentRows: [],
+    ticks: null,
+    universeTotal: null,
+    returned: null
+  };
+
+  const els = {
+    rows: document.getElementById("rows"),
+    empty: document.getElementById("empty"),
+    sector: document.getElementById("sector"),
+    sectorWrap: document.getElementById("sectorWrap"),
+    search: document.getElementById("search"),
+    volatility: document.getElementById("volatility"),
+    universe: document.getElementById("universe")
+  };
+
+  // Populate sector dropdown (from external SECTOR_DEFINITIONS)
+  if (els.sector) {
     Object.keys(SECTOR_DEFINITIONS).forEach(sector => {
       const option = document.createElement("option");
       option.value = sector;
       option.textContent = sector.replaceAll("_", " ");
       els.sector.appendChild(option);
     });
+  }
 
-    function hash(value) {
-      let total = 2166136261;
-      for (let i = 0; i < value.length; i++) total = Math.imul(total ^ value.charCodeAt(i), 16777619);
-      return Math.abs(total >>> 0);
+  // ---- Render scheduler (prevents UI jank) ----
+  let renderScheduled = false;
+  function scheduleRender() {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      render();
+    });
+  }
+
+  function hash(value) {
+    let total = 2166136261;
+    for (let i = 0; i < value.length; i++) total = Math.imul(total ^ value.charCodeAt(i), 16777619);
+    return Math.abs(total >>> 0);
+  }
+  function unit(value, salt = "") {
+    return (hash(`${value}:${salt}:${state.seed}`) % 1000) / 1000;
+  }
+
+  function makeSpark(symbol, direction) {
+    const points = Array.from({ length: 5 }, (_, i) =>
+      22 - i * 2 + (unit(symbol, `spark${i}`) - .5) * 10 + direction * i * 2.3
+    );
+    const min = Math.min(...points), max = Math.max(...points);
+    const coords = points
+      .map((p, i) => `${i * 18},${24 - ((p - min) / Math.max(max - min, 1)) * 19}`)
+      .join(" ");
+    const color = direction > 0 ? "#0d9b73" : "#d44e57";
+    return `<svg class="spark" viewBox="0 0 72 26" aria-label="Five candle trend">
+      <polygon class="area" fill="${color}" points="0,25 ${coords} 72,25"></polygon>
+      <polyline stroke="${color}" points="${coords}"></polyline>
+    </svg>`;
+  }
+
+  // Demo row generator (used only when live feed not available)
+  function makeRow(symbol, sector, index = 0, isIndex = false) {
+    const direction = unit(symbol, "direction") > .46 ? 1 : -1;
+    const participation = .78 + unit(symbol, "ratio") * 1.7;
+    const trend = 15 + unit(symbol, "adx") * 24;
+    const change = direction * (.35 + unit(symbol, "change") * 4.1);
+    const baseRsi = 48 + direction * (8 + unit(symbol, "rsi") * 25);
+    const rsi = Math.max(18, Math.min(84, state.type === "regular" ? baseRsi + (unit(symbol, "daily") - .5) * 7 : baseRsi));
+    const adx = Math.max(12, Math.min(42, state.type === "regular" ? trend + 2 : trend));
+    const ema = direction * (.15 + unit(symbol, "ema") * 3.8);
+    const score = Math.abs(change) * 1.8 + participation * 1.7 + adx / 18 + Math.abs(ema) / 2;
+    const volatility = Math.abs(change) > 3.1 ? "high" : Math.abs(change) > 1.6 ? "medium" : "low";
+    return {
+      symbol,
+      display: symbol,
+      sector,
+      direction,
+      change,
+      volume: (participation - 1) * 100,
+      ratio: participation,
+      rsi,
+      adx,
+      ema,
+      score,
+      rfactor: score,
+      volatility,
+      rank: index,
+      spark: makeSpark(symbol, direction),
+      isIndex
+    };
+  }
+
+  function buildDemoRows() {
+    if (state.universe === "index") {
+      return INDEX_DEFINITIONS.map(([name], i) => makeRow(name, "INDEX", i, true));
     }
-    function unit(value, salt = "") { return (hash(`${value}:${salt}:${state.seed}`) % 1000) / 1000; }
-    function makeSpark(symbol, direction) {
-      const points = Array.from({ length: 5 }, (_, i) => 22 - i * 2 + (unit(symbol, `spark${i}`) - .5) * 10 + direction * i * 2.3);
-      const min = Math.min(...points), max = Math.max(...points);
-      const coords = points.map((point, i) => `${i * 18},${24 - ((point - min) / Math.max(max - min, 1)) * 19}`).join(" ");
-      const color = direction > 0 ? "#0d9b73" : "#d44e57";
-      return `<svg class="spark" viewBox="0 0 72 26" aria-label="Five candle ${direction > 0 ? "upward" : "downward"} trend"><polygon class="area" fill="${color}" points="0,25 ${coords} 72,25"></polygon><polyline stroke="${color}" points="${coords}"></polyline></svg>`;
-    }
-    function makeRow(symbol, sector, index = 0, isIndex = false) {
-      const direction = unit(symbol, "direction") > .46 ? 1 : -1;
-      const participation = .78 + unit(symbol, "ratio") * 1.7;
-      const trend = 15 + unit(symbol, "adx") * 24;
-      const change = direction * (.35 + unit(symbol, "change") * 4.1);
-      const baseRsi = 48 + direction * (8 + unit(symbol, "rsi") * 25);
-      const rsi = Math.max(18, Math.min(84, state.type === "regular" ? baseRsi + (unit(symbol, "daily") - .5) * 7 : baseRsi));
-      const adx = Math.max(12, Math.min(42, state.type === "regular" ? trend + 2 : trend));
-      const ema = direction * (.15 + unit(symbol, "ema") * 3.8);
-      const score = Math.abs(change) * 1.8 + participation * 1.7 + adx / 18 + Math.abs(ema) / 2;
-      const volatility = Math.abs(change) > 3.1 ? "high" : Math.abs(change) > 1.6 ? "medium" : "low";
-      return { symbol, display: isIndex ? symbol : symbol, sector, direction, change, volume: (participation - 1) * 100, ratio: participation, rsi, adx, ema, score, rfactor: score, volatility, rank: index, spark: makeSpark(symbol, direction), isIndex };
-    }
-    function buildRows() {
-      if (state.universe === "index") return INDEX_DEFINITIONS.map(([name, key], i) => makeRow(name, "INDEX", i, true));
-      const membership = new Map();
-      Object.entries(SECTOR_DEFINITIONS).forEach(([sector, symbols]) => symbols.forEach(symbol => { if (!membership.has(symbol)) membership.set(symbol, sector); }));
-      const symbols = state.sector === "all" ? [...membership.keys()] : (SECTOR_DEFINITIONS[state.sector] || []);
-      return symbols.map((symbol, i) => makeRow(symbol, membership.get(symbol) || state.sector, i));
-    }
-    function rankRows(rows) {
-      [...rows].sort((a, b) => b.score - a.score).forEach((row, i) => { row.rank = i + 1; row.rfactor = Number(row.rfactor ?? row.score ?? 0); });
-      return rows;
-    }
-    function formatNumber(number, digits = 1) { return Number(number).toFixed(digits); }
-    function getFilteredRows(allRows) {
-      return allRows.filter(row => {
-        const directionMatch = state.direction === "all" || (state.direction === "positive" && row.direction > 0) || (state.direction === "negative" && row.direction < 0);
-        const volatilityMatch = state.volatility === "all" || row.volatility === state.volatility;
-        const searchMatch = !state.search || row.symbol.toLowerCase().includes(state.search.toLowerCase()) || row.sector.toLowerCase().includes(state.search.toLowerCase());
-        return directionMatch && volatilityMatch && searchMatch;
+
+    const membership = new Map();
+    Object.entries(SECTOR_DEFINITIONS).forEach(([sector, symbols]) => {
+      (symbols || []).forEach(symbol => { if (!membership.has(symbol)) membership.set(symbol, sector); });
+    });
+
+    const symbols = state.sector === "all"
+      ? [...membership.keys()].slice(0, DEMO_SYMBOL_LIMIT)
+      : ((SECTOR_DEFINITIONS[state.sector] || []).slice(0, DEMO_SYMBOL_LIMIT));
+
+    return symbols.map((symbol, i) => makeRow(symbol, membership.get(symbol) || state.sector, i));
+  }
+
+  function rankDemoRows(rows) {
+    [...rows].sort((a, b) => b.score - a.score).forEach((row, i) => {
+      row.rank = i + 1;
+      row.rfactor = Number(row.rfactor ?? row.score ?? 0);
+    });
+    return rows;
+  }
+
+  function formatNumber(number, digits = 1) {
+    return Number(number).toFixed(digits);
+  }
+  function signed(value, digits = 1) {
+    return `${value >= 0 ? "+" : ""}${formatNumber(value, digits)}`;
+  }
+
+  function getFilteredRows(rows) {
+    const q = state.search ? state.search.toLowerCase() : "";
+    return rows.filter(row => {
+      const directionMatch =
+        state.direction === "all" ||
+        (state.direction === "positive" && row.direction > 0) ||
+        (state.direction === "negative" && row.direction < 0);
+
+      const volatilityMatch = state.volatility === "all" || row.volatility === state.volatility;
+
+      const searchMatch =
+        !q ||
+        row.symbol.toLowerCase().includes(q) ||
+        (row.sector || "").toLowerCase().includes(q);
+
+      return directionMatch && volatilityMatch && searchMatch;
+    });
+  }
+
+  function compactSectorName(name) {
+    const labels = {
+      METAL: "MET", REALTY: "RE", ENERGY: "ENE", AUTO: "AUTO", IT: "IT", PHARMA: "PHA", FMCG: "FMCG",
+      CEMENT: "CEM", FINSERVICE: "FIN", BANK: "BANK", PSUBANK: "PSU", DURABLES: "DUR", LOGISTICS: "LOG",
+      DEFENCE: "DEF", NIFTY_50: "N50"
+    };
+    return labels[name] || name.replaceAll("_", " ").slice(0, 5);
+  }
+
+  function renderSectorFlow(topRows) {
+    // Light version: sector flow computed from TOP_LIMIT rows only
+    const container = document.getElementById("sectorFlowRows");
+    if (!container) return;
+
+    const grouped = new Map();
+
+    if (state.universe === "index") {
+      topRows.forEach(row => grouped.set(row.symbol, { sum: Number(row.change) || 0, count: 1 }));
+    } else {
+      // group by sector based on row.sector value (no heavy universe scan)
+      topRows.forEach(row => {
+        const key = row.sector || "UNKNOWN";
+        const prev = grouped.get(key) || { sum: 0, count: 0 };
+        grouped.set(key, { sum: prev.sum + (Number(row.change) || 0), count: prev.count + 1 });
       });
     }
-    function compactSectorName(name) {
-      const labels = { METAL: "MET", REALTY: "RE", ENERGY: "ENE", AUTO: "AUTO", IT: "IT", PHARMA: "PHA", FMCG: "FMCG", CEMENT: "CEM", FINSERVICE: "FIN", BANK: "BANK", PSUBANK: "PSU", DURABLES: "DUR", LOGISTICS: "LOG", DEFENCE: "DEF", NIFTY_50: "N50" };
-      return labels[name] || name.replaceAll("_", " ").slice(0, 5);
+
+    const items = [...grouped.entries()]
+      .map(([name, g]) => ({ name, mean: g.sum / Math.max(g.count, 1) }))
+      .sort((a, b) => b.mean - a.mean);
+
+    if (!items.length) {
+      container.innerHTML = '<div class="flow-empty">Sector flow is waiting for data.</div>';
+      return;
     }
-    function renderSectorFlow(allRows) {
-      const container = document.getElementById("sectorFlowRows");
-      const grouped = new Map();
-      if (state.universe === "index") {
-        allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
-      } else {
-        const bySymbol = new Map(allRows.map(row => [row.symbol, row]));
-        const definitions = state.sector === "all" ? SECTOR_DEFINITIONS : { [state.sector]: SECTOR_DEFINITIONS[state.sector] || [] };
-        Object.entries(definitions).forEach(([sector, symbols]) => {
-          const rows = symbols.map(symbol => bySymbol.get(symbol)).filter(Boolean);
-          if (!rows.length) return;
-          grouped.set(sector, { rows, sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0), count: rows.length, up: rows.filter(row => row.change >= 0).length, down: rows.filter(row => row.change < 0).length });
-        });
-      }
-      const items = [...grouped.entries()].map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) })).sort((a, b) => b.mean - a.mean);
-      if (!items.length) { container.innerHTML = '<div class="flow-empty">Sector flow is waiting for data.</div>'; return; }
-      const positiveMax = Math.max(...items.filter(item => item.mean > 0).map(item => item.mean), .01);
-      const negativeMax = Math.max(...items.filter(item => item.mean < 0).map(item => Math.abs(item.mean)), .01);
-      container.innerHTML = items.map(item => {
-        const positive = item.mean >= 0;
-        const height = Math.max(8, Math.abs(item.mean) / (positive ? positiveMax : negativeMax) * (positive ? 160 : 70));
-        return `<div class="flow-row" data-sector="${item.name}"><div class="flow-bar-zone"><div class="flow-fill ${positive ? "positive" : "negative"}" style="height:${height.toFixed(1)}px"></div></div><div class="flow-name" title="${item.name.replaceAll("_", " ")}"><span class="flow-name-full">${item.name.replaceAll("_", " ")}</span><span class="flow-name-short">${compactSectorName(item.name)}</span></div><div class="flow-value ${positive ? "positive" : "negative"}">${signed(item.mean)}%</div></div>`;
-      }).join("");
-      container.querySelectorAll(".flow-row").forEach(row => row.addEventListener("click", () => openSectorModal(row.dataset.sector)));
-    }
-    function openSectorModal(sector) {
-      let rows;
-      if (state.universe === "index") {
-        rows = state.currentRows.filter(row => row.symbol === sector);
-      } else {
-        const bySymbol = new Map(state.currentRows.map(row => [row.symbol, row]));
-        rows = (SECTOR_DEFINITIONS[sector] || []).map(symbol => bySymbol.get(symbol)).filter(Boolean);
-      }
-      rows.sort((a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0));
-      const modal = document.getElementById("sectorModal");
-      document.getElementById("sectorModalTitle").textContent = sector.replaceAll("_", " ");
-      document.getElementById("sectorModalRows").innerHTML = rows.length ? rows.map(row => `<div class="sector-stock-row"><div class="sector-stock-name"><span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${row.display}</div><div class="sector-stock-rfactor">${formatNumber(Number(row.rfactor ?? 0), 2)}</div></div>`).join("") : '<div class="sector-modal-empty">No constituent data is available yet.</div>';
-      modal.classList.add("open");
-      modal.setAttribute("aria-hidden", "false");
-    }
-    function closeSectorModal() {
-      const modal = document.getElementById("sectorModal");
-      modal.classList.remove("open");
-      modal.setAttribute("aria-hidden", "true");
-    }
-    function signed(value, digits = 1) { return `${value >= 0 ? "+" : ""}${formatNumber(value, digits)}`; }
-    function setView(view) {
-      const flow = view === "flow";
-      document.getElementById("momentumView").classList.toggle("view-hidden", flow);
-      document.getElementById("sectorFlow").classList.toggle("view-hidden", !flow);
-      document.getElementById("pageTitle").textContent = flow ? "Sector flow" : "Intraday momentum scanner";
-      document.getElementById("pageSubhead").textContent = flow ? "Compare average percentage change across sectors. Green leads; red lags." : "Rank the names moving now by participation, trend strength, and momentum. Start with the lowest rank, then validate on a chart.";
-      document.querySelectorAll(".nav button").forEach(item => item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : item.textContent.includes("Momentum")));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    function render() {
-      const allRows = state.liveRows ? state.liveRows : rankRows(buildRows());
-      state.currentRows = allRows;
-      const filtered = getFilteredRows(allRows);
-      const sorters = {
-        rank: (a, b) => a.rank - b.rank,
-        symbol: (a, b) => a.symbol.localeCompare(b.symbol),
-        change: (a, b) => b.change - a.change,
-        volume: (a, b) => b.volume - a.volume,
-        ratio: (a, b) => b.ratio - a.ratio,
-        rsi: (a, b) => b.rsi - a.rsi,
-        adx: (a, b) => b.adx - a.adx,
-        ema: (a, b) => Math.abs(b.ema) - Math.abs(a.ema)
-      };
-      filtered.sort(sorters[state.sort]);
-      const positive = allRows.filter(row => row.direction > 0).length;
-      const negative = allRows.length - positive;
-      const peak = Math.max(...allRows.map(row => row.ratio), 0);
-      document.getElementById("trackedValue").textContent = allRows.length;
-      document.getElementById("positiveValue").textContent = positive;
-      document.getElementById("negativeValue").textContent = negative;
-      document.getElementById("peakValue").textContent = `${formatNumber(peak, 2)}×`;
-      document.getElementById("positiveFoot").textContent = `${Math.round(positive / Math.max(allRows.length, 1) * 100)}% of universe`;
-      document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
-      document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
-      document.getElementById("tableCaption").textContent = `Lowest rank is strongest • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
-      const feedLabels = { live: "Live", snapshot: "Snapshot", seeding: "Seeding", offline: "Offline" };
-      const feedLabel = feedLabels[state.feedStatus] || "Offline";
-      const feedChip = document.getElementById("feedChip");
-      feedChip.className = `feed-chip ${state.feedStatus}`;
-      document.getElementById("feedChipText").textContent = feedLabel;
-      document.getElementById("ticksChip").textContent = state.ticks === null ? "Ticks --" : `Ticks ${Number(state.ticks).toLocaleString()}`;
-      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? "Live market / NSE universe" : state.feedStatus === "snapshot" ? "Market snapshot / NSE universe" : state.feedStatus === "seeding" ? "Loading market history / NSE universe" : "Market pulse / NSE universe · offline";
-      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Market snapshot" : state.feedStatus === "seeding" ? "History loading" : "Offline";
-      renderSectorFlow(allRows);
-      document.querySelector("table").classList.toggle("compact", state.view === "compact");
-      els.empty.hidden = filtered.length !== 0;
-      els.rows.innerHTML = filtered.map(row => {
-        const tone = row.direction > 0 ? "green" : "red";
-        const adxClass = row.adx > 25 ? "high" : row.adx < 20 ? "low" : "mid";
-        const chip = row.isIndex ? "⌁" : row.symbol.replace(/[^A-Z]/g, "").slice(0, 2);
-        return `<tr>
-          <td><div class="stock-cell"><div class="stock-chip ${tone}">${chip || "•"}</div><div><div class="stock-name">${row.display}</div><div class="stock-sector">${row.sector.replaceAll("_", " ")}</div></div></div></td>
-          <td class="rank">${row.rank}</td><td class="trend ${row.direction > 0 ? "up" : "down"}">${signed(row.change)}%</td><td class="trend ${row.volume >= 0 ? "up" : "down"}">${signed(row.volume)}%</td>
-          <td><span class="ratio ${row.ratio >= 1.35 ? "hot" : row.ratio < 1 ? "cool" : ""}">${formatNumber(row.ratio, 2)}×</span></td><td>${formatNumber(row.rsi)}</td><td><span class="metric-pill ${adxClass}">${formatNumber(row.adx)}</span></td><td class="trend ${row.ema >= 0 ? "up" : "down"}">${signed(row.ema)}%</td><td>${row.spark}</td>
-        </tr>`;
-      }).join("");
-    }
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.style.opacity = "1";
-      toast.style.transform = "translate(-50%, 0)";
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translate(-50%, 16px)"; }, 2200);
-    }
-    async function loadLiveData(manual = false) {
-      const params = new URLSearchParams({ type: state.type, universe: state.universe, sector: state.sector, _: Date.now() });
-      try {
-        const response = await fetch(`/api/scan?${params.toString()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        if (!Array.isArray(payload.rows)) throw new Error("Invalid scan payload");
-        if (!payload.rows.length && payload.live !== true) {
-          state.liveRows = null;
-          state.live = false;
-          state.feedStatus = payload.status === "seeding" ? "seeding" : "offline";
-          render();
-          if (manual) showToast(payload.status === "seeding" ? "History is still loading" : "Live feed unavailable; demo snapshot shown");
-          return;
-        }
-        state.liveRows = payload.rows;
-        state.live = payload.live === true;
-        state.ticks = Number.isFinite(Number(payload.ticks)) ? Number(payload.ticks) : state.ticks;
-        state.feedStatus = state.live ? "live" : payload.status === "market_closed" ? "snapshot" : payload.status === "seeding" ? "seeding" : "offline";
-        const stamp = payload.updated_at ? `Live snapshot • ${payload.updated_at}` : (state.live ? "Live snapshot" : "Waiting for feed");
-        document.getElementById("updatedAt").textContent = stamp;
-        render();
-        if (manual) showToast(state.live ? "Live scan refreshed" : "Feed reachable; waiting for ticks");
-      } catch (error) {
-        state.feedStatus = "offline";
-        if (!state.live) {
-          state.liveRows = null;
-          render();
-        }
-        if (manual) showToast("Live feed unavailable; demo snapshot shown");
-      }
-    }
-    document.querySelectorAll(".segmented").forEach(group => group.addEventListener("click", event => {
-      const button = event.target.closest("button");
-      if (!button) return;
-      const name = group.dataset.group;
-      state[name] = button.dataset.value;
-      group.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
-       render();
-       loadLiveData();
-    }));
-    [els.volatility, els.sector].forEach(select => select.addEventListener("change", event => { state[select.id] = event.target.value; render(); loadLiveData(); }));
-    els.universe.addEventListener("change", event => {
-      state.universe = event.target.value;
-      els.sectorWrap.style.display = state.universe === "index" ? "none" : "block";
-      if (state.universe === "index") { state.sector = "all"; els.sector.value = "all"; }
-      showToast(state.universe === "index" ? "Index universe selected" : "Stock universe selected");
-      render();
-      loadLiveData();
+
+    const positiveMax = Math.max(...items.filter(i => i.mean > 0).map(i => i.mean), .01);
+    const negativeMax = Math.max(...items.filter(i => i.mean < 0).map(i => Math.abs(i.mean)), .01);
+
+    container.innerHTML = items.map(item => {
+      const positive = item.mean >= 0;
+      const height = Math.max(
+        8,
+        Math.abs(item.mean) / (positive ? positiveMax : negativeMax) * (positive ? 160 : 70)
+      );
+      const label = item.name.replaceAll("_", " ");
+      return `<div class="flow-row" data-sector="${item.name}">
+        <div class="flow-bar-zone">
+          <div class="flow-fill ${positive ? "positive" : "negative"}" style="height:${height.toFixed(1)}px"></div>
+        </div>
+        <div class="flow-name" title="${label}">
+          <span class="flow-name-full">${label}</span>
+          <span class="flow-name-short">${compactSectorName(item.name)}</span>
+        </div>
+        <div class="flow-value ${positive ? "positive" : "negative"}">${signed(item.mean)}%</div>
+      </div>`;
+    }).join("");
+
+    container.querySelectorAll(".flow-row").forEach(row => {
+      row.addEventListener("click", () => openSectorModal(row.dataset.sector));
     });
-    els.search.addEventListener("input", event => { state.search = event.target.value.trim(); render(); });
-    document.querySelectorAll("th button[data-sort]").forEach(button => button.addEventListener("click", () => { state.sort = button.dataset.sort; render(); }));
-    document.querySelectorAll(".view-toggle button").forEach(button => button.addEventListener("click", () => {
-      state.view = button.dataset.view;
-      document.querySelectorAll(".view-toggle button").forEach(item => item.classList.toggle("active", item === button));
-      render();
-    }));
-    document.getElementById("refreshBtn").addEventListener("click", () => {
-      state.seed += 1;
-      const now = new Date();
-      document.getElementById("updatedAt").textContent = `Sample snapshot • ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-      showToast("Refreshing scanner");
-      render();
-      loadLiveData(true);
+  }
+
+  function openSectorModal(sector) {
+    let rows = [];
+    if (state.universe === "index") {
+      rows = (state.currentRows || []).filter(r => r.symbol === sector);
+    } else {
+      // Use definitions file to list constituents, but only show what we currently have in top list.
+      const bySymbol = new Map((state.currentRows || []).map(r => [r.symbol, r]));
+      rows = (SECTOR_DEFINITIONS[sector] || []).map(sym => bySymbol.get(sym)).filter(Boolean);
+    }
+
+    rows.sort((a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0));
+
+    const modal = document.getElementById("sectorModal");
+    document.getElementById("sectorModalTitle").textContent = (sector || "").replaceAll("_", " ");
+    document.getElementById("sectorModalRows").innerHTML = rows.length
+      ? rows.map(row => `<div class="sector-stock-row">
+          <div class="sector-stock-name">
+            <span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${row.display}
+          </div>
+          <div class="sector-stock-rfactor">${formatNumber(Number(row.rfactor ?? 0), 2)}</div>
+        </div>`).join("")
+      : '<div class="sector-modal-empty">No constituent data is available in the top list.</div>';
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSectorModal() {
+    const modal = document.getElementById("sectorModal");
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function setView(view) {
+    const flow = view === "flow";
+    document.getElementById("momentumView").classList.toggle("view-hidden", flow);
+    document.getElementById("sectorFlow").classList.toggle("view-hidden", !flow);
+
+    document.getElementById("pageTitle").textContent = flow ? "Sector flow" : "Intraday momentum scanner";
+    document.getElementById("pageSubhead").textContent = flow
+      ? "Compare average percentage change across sectors. Green leads; red lags."
+      : "Rank the names moving now by participation, trend strength, and momentum. Start with the lowest rank, then validate on a chart.";
+
+    document.querySelectorAll(".nav button").forEach(item =>
+      item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : item.textContent.includes("Momentum"))
+    );
+
+    scheduleRender();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function render() {
+    const baseRows = state.liveRows ? state.liveRows : rankDemoRows(buildDemoRows());
+
+    // keep UI light always
+    const topRows = (baseRows || []).slice(0, TOP_LIMIT);
+
+    state.currentRows = topRows;
+
+    const filtered = getFilteredRows(topRows);
+
+    const sorters = {
+      rank: (a, b) => a.rank - b.rank,
+      symbol: (a, b) => a.symbol.localeCompare(b.symbol),
+      change: (a, b) => b.change - a.change,
+      volume: (a, b) => b.volume - a.volume,
+      ratio: (a, b) => b.ratio - a.ratio,
+      rsi: (a, b) => b.rsi - a.rsi,
+      adx: (a, b) => b.adx - a.adx,
+      ema: (a, b) => Math.abs(b.ema) - Math.abs(a.ema)
+    };
+    filtered.sort(sorters[state.sort] || sorters.rank);
+
+    const positive = topRows.filter(r => r.direction > 0).length;
+    const negative = topRows.length - positive;
+    const peak = Math.max(...topRows.map(r => r.ratio), 0);
+
+    document.getElementById("trackedValue").textContent = state.universeTotal ?? topRows.length;
+    document.getElementById("positiveValue").textContent = positive;
+    document.getElementById("negativeValue").textContent = negative;
+    document.getElementById("peakValue").textContent = `${formatNumber(peak, 2)}×`;
+    document.getElementById("positiveFoot").textContent = `within top ${TOP_LIMIT}`;
+    document.getElementById("negativeFoot").textContent = `within top ${TOP_LIMIT}`;
+    document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
+    document.getElementById("tableCaption").textContent =
+      `Top ${TOP_LIMIT} only • lowest rank is strongest • RSI/ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
+
+    const feedLabels = { live: "Live", snapshot: "Snapshot", seeding: "Seeding", offline: "Offline" };
+    const feedChip = document.getElementById("feedChip");
+    feedChip.className = `feed-chip ${state.feedStatus}`;
+    document.getElementById("feedChipText").textContent = feedLabels[state.feedStatus] || "Offline";
+    document.getElementById("ticksChip").textContent =
+      state.ticks === null ? "Ticks --" : `Ticks ${Number(state.ticks).toLocaleString()}`;
+
+    document.getElementById("feedStatusText").textContent =
+      state.feedStatus === "live" ? "Live market / NSE universe"
+      : state.feedStatus === "snapshot" ? "Market snapshot / NSE universe"
+      : state.feedStatus === "seeding" ? "Loading market history / NSE universe"
+      : "Market pulse / NSE universe · offline";
+
+    document.getElementById("feedBadge").textContent =
+      state.feedStatus === "live" ? "Live feed"
+      : state.feedStatus === "snapshot" ? "Market snapshot"
+      : state.feedStatus === "seeding" ? "History loading"
+      : "Offline";
+
+    const flowVisible = !document.getElementById("sectorFlow").classList.contains("view-hidden");
+    if (flowVisible) renderSectorFlow(topRows);
+
+    document.querySelector("table").classList.toggle("compact", state.view === "compact");
+    els.empty.hidden = filtered.length !== 0;
+
+    els.rows.innerHTML = filtered.map(row => {
+      const tone = row.direction > 0 ? "green" : "red";
+      const adxClass = row.adx > 25 ? "high" : row.adx < 20 ? "low" : "mid";
+      const chip = row.isIndex ? "⌁" : row.symbol.replace(/[^A-Z]/g, "").slice(0, 2);
+      return `<tr>
+        <td>
+          <div class="stock-cell">
+            <div class="stock-chip ${tone}">${chip || "•"}</div>
+            <div>
+              <div class="stock-name">${row.display}</div>
+              <div class="stock-sector">${(row.sector || "").replaceAll("_", " ")}</div>
+            </div>
+          </div>
+        </td>
+        <td class="rank">${row.rank}</td>
+        <td class="trend ${row.direction > 0 ? "up" : "down"}">${signed(row.change)}%</td>
+        <td class="trend ${row.volume >= 0 ? "up" : "down"}">${signed(row.volume)}%</td>
+        <td><span class="ratio ${row.ratio >= 1.35 ? "hot" : row.ratio < 1 ? "cool" : ""}">${formatNumber(row.ratio, 2)}×</span></td>
+        <td>${formatNumber(row.rsi)}</td>
+        <td><span class="metric-pill ${adxClass}">${formatNumber(row.adx)}</span></td>
+        <td class="trend ${row.ema >= 0 ? "up" : "down"}">${signed(row.ema)}%</td>
+        <td>${row.spark}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    toast.style.transform = "translate(-50%, 0)";
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translate(-50%, 16px)";
+    }, 2200);
+  }
+
+  // ---- Live fetch (no overlaps) ----
+  let loadInFlight = false;
+
+  async function loadLiveData(manual = false) {
+    if (loadInFlight) return;
+    if (document.hidden && !manual) return;
+
+    loadInFlight = true;
+
+    const params = new URLSearchParams({
+      type: state.type,
+      universe: state.universe,
+      sector: state.sector,
+      limit: TOP_LIMIT,
+      _: Date.now()
     });
-    document.getElementById("helpBtn").addEventListener("click", () => {
-      document.querySelector(".side .panel").scrollIntoView({ behavior: "smooth", block: "center" });
-      showToast("Start with rank, then confirm the chart");
-    });
-    document.getElementById("sectorModalClose").addEventListener("click", closeSectorModal);
-    document.getElementById("sectorModal").addEventListener("click", event => { if (event.target.id === "sectorModal") closeSectorModal(); });
-    document.addEventListener("keydown", event => { if (event.key === "Escape") closeSectorModal(); });
-    document.querySelectorAll(".nav button").forEach(button => button.addEventListener("click", () => {
-      if (button.dataset.scroll) {
-        setView("flow");
-        showToast("Sector flow sorted by mean % change");
-      } else if (button.textContent.includes("Momentum")) {
-        setView("momentum");
-        showToast("Momentum scanner selected");
+
+    try {
+      const response = await fetch(`/api/scan?${params.toString()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+
+      if (!Array.isArray(payload.rows)) throw new Error("Invalid scan payload");
+
+      state.ticks = Number.isFinite(Number(payload.ticks)) ? Number(payload.ticks) : state.ticks;
+      state.universeTotal = Number.isFinite(Number(payload.universe_total)) ? Number(payload.universe_total) : null;
+      state.returned = Number.isFinite(Number(payload.returned)) ? Number(payload.returned) : (payload.rows?.length ?? null);
+
+      if (!payload.rows.length && payload.live !== true) {
+        state.liveRows = null;
+        state.live = false;
+        state.feedStatus = payload.status === "seeding" ? "seeding" : "offline";
+        scheduleRender();
+        if (manual) showToast(payload.status === "seeding" ? "History is still loading" : "Live feed unavailable; demo snapshot shown");
+        return;
       }
-      else showToast(`${button.textContent.trim()} is a demo view`);
-    }));
-    document.getElementById("updatedAt").textContent = `Sample snapshot • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    render();
+
+      state.liveRows = payload.rows.slice(0, TOP_LIMIT);
+      state.live = payload.live === true;
+      state.feedStatus =
+        state.live ? "live"
+        : payload.status === "market_closed" ? "snapshot"
+        : payload.status === "seeding" ? "seeding"
+        : "offline";
+
+      const stamp = payload.updated_at
+        ? `Live snapshot • ${payload.updated_at}`
+        : (state.live ? "Live snapshot" : "Waiting for feed");
+      document.getElementById("updatedAt").textContent = stamp;
+
+      scheduleRender();
+      if (manual) showToast(state.live ? "Live scan refreshed" : "Feed reachable; waiting for ticks");
+    } catch (e) {
+      state.feedStatus = "offline";
+      if (!state.live) {
+        state.liveRows = null;
+        scheduleRender();
+      }
+      if (manual) showToast("Live feed unavailable; demo snapshot shown");
+    } finally {
+      loadInFlight = false;
+    }
+  }
+
+  // ---- UI handlers ----
+  document.querySelectorAll(".segmented").forEach(group => group.addEventListener("click", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const name = group.dataset.group;
+    state[name] = button.dataset.value;
+    group.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
+    scheduleRender();
     loadLiveData();
-    setInterval(() => loadLiveData(), 5000);
-  </script>
+  }));
+
+  [els.volatility, els.sector].forEach(select => select && select.addEventListener("change", event => {
+    state[select.id] = event.target.value;
+    scheduleRender();
+    loadLiveData();
+  }));
+
+  els.universe.addEventListener("change", event => {
+    state.universe = event.target.value;
+    els.sectorWrap.style.display = state.universe === "index" ? "none" : "block";
+    if (state.universe === "index") { state.sector = "all"; els.sector.value = "all"; }
+    showToast(state.universe === "index" ? "Index universe selected" : "Stock universe selected");
+    scheduleRender();
+    loadLiveData();
+  });
+
+  els.search.addEventListener("input", event => {
+    state.search = event.target.value.trim();
+    scheduleRender();
+  });
+
+  document.querySelectorAll("th button[data-sort]").forEach(button => button.addEventListener("click", () => {
+    state.sort = button.dataset.sort;
+    scheduleRender();
+  }));
+
+  document.querySelectorAll(".view-toggle button").forEach(button => button.addEventListener("click", () => {
+    state.view = button.dataset.view;
+    document.querySelectorAll(".view-toggle button").forEach(item => item.classList.toggle("active", item === button));
+    scheduleRender();
+  }));
+
+  document.getElementById("refreshBtn").addEventListener("click", () => {
+    state.seed += 1;
+    const now = new Date();
+    document.getElementById("updatedAt").textContent =
+      `Sample snapshot • ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    showToast("Refreshing scanner");
+    scheduleRender();
+    loadLiveData(true);
+  });
+
+  document.getElementById("helpBtn").addEventListener("click", () => {
+    document.querySelector(".side .panel").scrollIntoView({ behavior: "smooth", block: "center" });
+    showToast("Start with rank, then confirm the chart");
+  });
+
+  document.getElementById("sectorModalClose").addEventListener("click", closeSectorModal);
+  document.getElementById("sectorModal").addEventListener("click", event => { if (event.target.id === "sectorModal") closeSectorModal(); });
+  document.addEventListener("keydown", event => { if (event.key === "Escape") closeSectorModal(); });
+
+  document.querySelectorAll(".nav button").forEach(button => button.addEventListener("click", () => {
+    if (button.dataset.scroll) {
+      setView("flow");
+      showToast("Sector flow (top list)");
+    } else if (button.textContent.includes("Momentum")) {
+      setView("momentum");
+      showToast("Momentum scanner selected");
+    } else {
+      showToast(`${button.textContent.trim()} is a demo view`);
+    }
+  }));
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadLiveData(false);
+  });
+
+  document.getElementById("updatedAt").textContent =
+    `Sample snapshot • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+  scheduleRender();
+  loadLiveData();
+  setInterval(() => loadLiveData(), POLL_MS);
+</script>
 </body>
 </html>
