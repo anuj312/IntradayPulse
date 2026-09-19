@@ -4,8 +4,8 @@ services:
     env: python
     plan: starter
     rootDir: outputs
-    buildCommand: /usr/bin/python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-    startCommand: .venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+    buildCommand: rm -rf .deps && /usr/bin/python3 -m pip install --no-cache-dir --target .deps -r requirements.txt
+    startCommand: PYTHONPATH=.deps /usr/bin/python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
