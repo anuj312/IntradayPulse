@@ -35,4 +35,16 @@ For a single-process production deployment, use one worker because the process o
 gunicorn --workers 1 --bind 0.0.0.0:8050 live_scanner_server:app
 ```
 
+## Deploy on Render
+
+1. Put the files in this folder in a GitHub repository.
+2. In Render, create a new Web Service from that repository.
+3. Set the Root Directory to `outputs` if the folder is inside a larger repository.
+4. Use Build Command: `pip install -r requirements-live.txt`.
+5. Use Start Command: `python -m gunicorn --workers 1 --bind 0.0.0.0:$PORT live_scanner_server:app`.
+6. Add `KITE_API_KEY` and `KITE_ACCESS_TOKEN` as secret environment variables.
+7. Deploy and open the Render URL. The health check is `/api/health`.
+
+`render.yaml` contains the same setup. Use an always-on instance for dependable market-hours streaming; sleeping instances can miss ticks. Kite access tokens usually expire daily, so update `KITE_ACCESS_TOKEN` in Render before the next session.
+
 This is research context only. It is not an order-entry system or a trading signal.

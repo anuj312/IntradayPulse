@@ -56,6 +56,7 @@ TOTAL_TICKS = 0
 TICKER_CONNECTED = False
 TICKER_STARTED = False
 SEED_STARTED = False
+LIVE_INITIALIZED = False
 SEED_PROGRESS = {"done": 0, "total": 0, "errors": 0}
 
 
@@ -541,15 +542,26 @@ def scan():
     })
 
 
-def start() -> None:
+def initialize_live() -> None:
+    """Start live services once for both Python and Gunicorn entrypoints."""
+    global LIVE_INITIALIZED
+    if LIVE_INITIALIZED:
+        return
+    LIVE_INITIALIZED = True
     try:
         load_instruments()
         _start_history_seed()
         _start_ticker()
     except Exception:
         log.exception("Live market startup failed; serving demo UI")
+
+
+def start() -> None:
+    initialize_live()
     app.run(host="0.0.0.0", port=PORT, threaded=True, debug=False)
 
+
+initialize_live()
 
 if __name__ == "__main__":
     start()
