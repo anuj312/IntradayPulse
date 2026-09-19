@@ -22,10 +22,11 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Loads the supplied NSE sector universe from `sector_definitions.py`.
 - Uses Kite historical candles to seed 5-minute and daily indicators.
 - Uses KiteTicker full-mode ticks for current price, volume, and five-point sparklines.
-- Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, volatility bucket, and momentum rank.
+- Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, volatility bucket, and momentum rank. An early spike loses rank when the stock goes sideways instead of continuing; intraday momentum uses 5-minute candles from the open, with roughly the last 15 minutes weighted most heavily.
 - Calculates and exposes a live RFactor value; click any Sector flow bar to see its stocks sorted by RFactor.
 - Shows the cumulative KiteTicker tick count beside the feed status.
 - Serves `/api/scan` for the page and `/api/health` for feed status.
+- Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
 
 The initial historical seed is deliberately paced and can take a few minutes for the full universe. Until enough history is available, the page remains in demo mode. Kite access tokens normally expire daily, so provide a fresh token before starting the server.
 
@@ -40,7 +41,7 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8050 --workers 1
 1. Put the files in this folder in a GitHub repository.
 2. In Render, create a new Web Service from that repository.
 3. Set the Root Directory to `outputs` if the folder is inside a larger repository.
-4. Use Build Command: `pip install -r requirements-live.txt`.
+4. Use Build Command: `python3 -m pip install -r requirements.txt`.
 5. Use Start Command: `python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1`.
 6. Add `KITE_API_KEY` and `KITE_ACCESS_TOKEN` as secret environment variables.
 7. Deploy and open the Render URL. The health check is `/api/health`.
