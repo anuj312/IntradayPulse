@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from collections import deque
-from datetime import datetime, time as dtime, timedelta
+from datetime import date, datetime, time as dtime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -68,6 +68,9 @@ SEED_PROGRESS = {"done": 0, "total": 0, "errors": 0}
 DETAIL_SYMBOLS: set[str] = set()
 SEED_IN_PROGRESS = False
 FAST_ROTATION_STARTED = False
+HISTORY_SEED_DATE: Optional[date] = None
+DAILY_REFRESH_STARTED = False
+DAILY_REFRESH_START_LOCK = threading.Lock()
 SCAN_CACHE: Dict[str, Dict[str, List[dict]]] = {
     "intraday": {"stocks": [], "index": []},
     "regular": {"stocks": [], "index": []},
@@ -356,11 +359,57 @@ def _start_fast_rotation() -> None:
     threading.Thread(target=run, name="fast-rotation", daemon=True).start()
 
 
-def _start_history_seed() -> None:
-    global SEED_IN_PROGRESS, SEED_STARTED
+def _reset_for_new_market_day(today: date) -> None:
+    """Drop prior-session state before reseeding the new market session."""
+    global LAST_TICK_TS, TOTAL_TICKS, SCAN_CACHE_UPDATED_AT
+    with DATA_LOCK:
+        HISTORY.clear()
+        PRICE_HISTORY.clear()
+        TICK_STATE.clear()
+        LAST_TICK_TS = 0.0
+        TOTAL_TICKS = 0
+    with SCAN_CACHE_LOCK:
+        for timeframe in SCAN_CACHE:
+            for universe in SCAN_CACHE[timeframe]:
+                SCAN_CACHE[timeframe][universe] = []
+        SECTOR_FLOW_CACHE.clear()
+        SCAN_CACHE_UPDATED_AT = 0.0
+    log.info("Started fresh market session for %s", today.isoformat())
+
+
+def _start_daily_refresh() -> None:
+    global DAILY_REFRESH_STARTED
+    with DAILY_REFRESH_START_LOCK:
+        if DAILY_REFRESH_STARTED:
+            return
+        DAILY_REFRESH_STARTED = True
+
+    def run() -> None:
+        while True:
+            now = datetime.now(IST)
+            seeded_date = HISTORY_SEED_DATE
+            if market_is_open(now) and seeded_date is not None and seeded_date < now.date():
+                _reset_for_new_market_day(now.date())
+                try:
+                    _start_history_seed(force=True)
+                except Exception:
+                    log.exception("New market-day history seed failed")
+            time.sleep(30)
+
+    threading.Thread(target=run, name="daily-refresh", daemon=True).start()
+
+
+def _start_history_seed(force: bool = False) -> None:
+    global SEED_IN_PROGRESS, SEED_STARTED, HISTORY_SEED_DATE
     if SEED_STARTED or kite is None:
+        if not force or kite is None:
+            return
+    today = datetime.now(IST).date()
+    if SEED_IN_PROGRESS or HISTORY_SEED_DATE == today:
         return
     SEED_STARTED = True
+    HISTORY_SEED_DATE = today
+    SEED_PROGRESS.update({"done": 0, "total": 0, "errors": 0})
     if FAST_MODE:
         SEED_PROGRESS["total"] = FAST_SYMBOL_LIMIT
     SEED_IN_PROGRESS = True
@@ -514,24 +563,22 @@ def _session_trend_quality(
     if frame.empty:
         return 1.0
     today = frame[frame["date"].dt.date == now.date()]
-    if today.empty:
-        return 1.0
-    values = [_as_float(today.iloc[0]["open"])] + [
-        _as_float(value) for value in today["close"].tolist()
-    ]
-    values = [value for value in values if value is not None and value > 0]
-    if len(values) < 2:
-        return 1.0
-    values.append(ltp)
     expected_direction = 1.0 if change >= 0 else -1.0
-    meaningful_moves = []
-    for previous, current in zip(values, values[1:]):
-        move = (current - previous) / previous * 100.0 * expected_direction
-        meaningful_moves.append(move >= 0.02)
-    if not meaningful_moves:
-        return 1.0
-    continuity = sum(meaningful_moves) / len(meaningful_moves)
-    quality = max(0.05, continuity * continuity)
+    quality = 1.0
+    if not today.empty:
+        values = [_as_float(today.iloc[0]["open"])] + [
+            _as_float(value) for value in today["close"].tolist()
+        ]
+        values = [value for value in values if value is not None and value > 0]
+        if len(values) >= 2:
+            values.append(ltp)
+            meaningful_moves = []
+            for previous, current in zip(values, values[1:]):
+                move = (current - previous) / previous * 100.0 * expected_direction
+                meaningful_moves.append(move >= 0.02)
+            if meaningful_moves:
+                continuity = sum(meaningful_moves) / len(meaningful_moves)
+                quality = max(0.05, continuity * continuity)
     if live_candles and len(live_candles) >= 2:
         live_moves = [
             ((candle["close"] - candle["open"]) / candle["open"] * 100.0) * expected_direction
@@ -553,8 +600,6 @@ def _volume_confirmation(
         return 1.0
     intraday = frame[frame["volume"] > 0]
     today = intraday[intraday["date"].dt.date == now.date()]
-    if today.empty:
-        return 1.0
     history = intraday[intraday["date"].dt.date < now.date()]
     baseline_source = history["volume"].tail(120) if not history.empty else intraday["volume"].iloc[:-3]
     baseline = float(baseline_source.median()) if not baseline_source.empty else 0.0
@@ -569,6 +614,8 @@ def _volume_confirmation(
         volumes = [float(candle["volume"]) for candle in recent_candles]
         directional_rate = sum(move >= 0.02 and volume >= baseline * 0.80 for move, volume in zip(moves, volumes)) / len(recent_candles)
         recent_volume_ratio = sum(volumes) / len(volumes) / baseline
+    elif today.empty:
+        return 1.0
     else:
         recent = today.tail(3)
         moves = ((recent["close"] - recent["open"]) / recent["open"] * 100.0) * expected_direction
@@ -689,8 +736,11 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
         + abs(ema_gap) * 0.20
         + abs(rsi - 50.0) / 24.0 * 0.35
     )
-    score = (max(0.0, aligned_recent) * 2.3 + stale_trend * (0.35 + 0.65 * freshness)) * trend_quality * volume_quality * flow_quality
     rfactor = _rfactor(token, timeframe, ltp, volume, day_high, day_low, change)
+    rfactor_quality = max(0.0, min(1.0, rfactor / 4.0))
+    continuation_quality = max(0.05, min(1.0, trend_quality * volume_quality))
+    base_score = max(0.0, aligned_recent) * 2.3 + stale_trend * (0.35 + 0.65 * freshness)
+    score = base_score * continuation_quality * (0.65 + 0.35 * rfactor_quality) * flow_quality
     volatility = "high" if abs(change) >= 2.5 or abs(ema_gap) >= 2.5 else "medium" if abs(change) >= 1.0 or abs(ema_gap) >= 1.2 else "low"
     positive = change >= 0
     return {
@@ -702,6 +752,7 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
         "recent": round(recent_change, 2),
         "trendQuality": round(trend_quality, 2),
         "volumeConfirm": round(volume_quality, 2),
+        "continuation": round(continuation_quality, 2),
         "buySellDelta": round(buy_sell_delta, 2) if buy_sell_delta is not None else None,
         "volume": round((ratio - 1.0) * 100.0, 2),
         "ratio": round(ratio, 2),
@@ -966,6 +1017,8 @@ def initialize_live() -> None:
         _start_ticker()
     except Exception:
         log.exception("Live market startup failed; serving demo UI")
+    finally:
+        _start_daily_refresh()
 
 
 def start() -> None:

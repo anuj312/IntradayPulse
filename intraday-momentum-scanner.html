@@ -383,11 +383,11 @@
       </section>
       <div class="content-grid">
         <section class="panel" aria-label="Momentum rankings">
-          <div class="panel-head"><div><h2 class="panel-title">Momentum rankings</h2><p class="panel-caption" id="tableCaption">Lowest rank is strongest • RSI and ADX are 5-min</p></div><div class="view-toggle"><button class="active" data-view="table" type="button">Table</button><button data-view="compact" type="button">Compact</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th><button data-sort="symbol" type="button">Name</button></th><th><button data-sort="rank" type="button">Rank ↕</button></th><th><button data-sort="change" type="button">LTP %</button></th><th><button data-sort="volume" type="button">Volume %</button></th><th><button data-sort="ratio" type="button">Vol ratio</button></th><th>Buy-sell Δ</th><th><button data-sort="rsi" type="button">RSI</button></th><th><button data-sort="adx" type="button">ADX</button></th><th><button data-sort="ema" type="button">21 EMA %</button></th><th>5 candles</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No names match these filters.</div></div>
+          <div class="panel-head"><div><h2 class="panel-title">Momentum rankings</h2><p class="panel-caption" id="tableCaption">Lowest rank is strongest • RFactor and continuation are weighted • sideways moves rank lower</p></div><div class="view-toggle"><button class="active" data-view="table" type="button">Table</button><button data-view="compact" type="button">Compact</button></div></div>
+          <div class="table-wrap"><table><thead><tr><th><button data-sort="symbol" type="button">Name</button></th><th><button data-sort="rank" type="button">Rank ↕</button></th><th><button data-sort="change" type="button">LTP %</button></th><th><button data-sort="volume" type="button">Volume %</button></th><th><button data-sort="ratio" type="button">Vol ratio</button></th><th><button data-sort="rfactor" type="button">RFactor</button></th><th>Buy-sell Δ</th><th><button data-sort="rsi" type="button">RSI</button></th><th><button data-sort="adx" type="button">ADX</button></th><th><button data-sort="ema" type="button">21 EMA %</button></th><th>5 candles</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No names match these filters.</div></div>
         </section>
         <aside class="side">
-          <section class="panel"><h2 class="side-title">How to read this view</h2><div class="legend-row"><div class="legend-icon green">↓</div><div class="legend-copy"><strong>Momentum rank</strong><span>Lower is stronger. Sort here first, then inspect the surrounding metrics.</span></div></div><div class="legend-row"><div class="legend-icon green">×</div><div class="legend-copy"><strong>Volume confirmation</strong><span>Recent directional 5-minute candles need meaningful volume, not just a morning volume spike.</span></div></div><div class="legend-row"><div class="legend-icon amber">Δ</div><div class="legend-copy"><strong>Buy-sell Δ</strong><span>Positive means bid depth is stronger; negative means ask depth is stronger. This is order-book pressure, not executed trade volume.</span></div></div><div class="legend-row"><div class="legend-icon amber">R</div><div class="legend-copy"><strong>RSI / ADX</strong><span>RSI above 70 or below 30 is stretched. ADX above 25 suggests a stronger trend.</span></div></div><div class="legend-row"><div class="legend-icon red">E</div><div class="legend-copy"><strong>21 EMA %</strong><span>A large gap can fade; a small gap can persist. Treat it as context only.</span></div></div></section>
+          <section class="panel"><h2 class="side-title">How to read this view</h2><div class="legend-row"><div class="legend-icon green">↓</div><div class="legend-copy"><strong>Momentum rank</strong><span>Lower is stronger. RFactor and recent directional continuation are included, so sideways names fall down the list.</span></div></div><div class="legend-row"><div class="legend-icon green">×</div><div class="legend-copy"><strong>Volume confirmation</strong><span>Recent directional 5-minute candles need meaningful volume, not just a morning volume spike.</span></div></div><div class="legend-row"><div class="legend-icon amber">Δ</div><div class="legend-copy"><strong>Buy-sell Δ</strong><span>Positive means bid depth is stronger; negative means ask depth is stronger. This is order-book pressure, not executed trade volume.</span></div></div><div class="legend-row"><div class="legend-icon amber">R</div><div class="legend-copy"><strong>RSI / ADX</strong><span>RSI above 70 or below 30 is stretched. ADX above 25 suggests a stronger trend.</span></div></div><div class="legend-row"><div class="legend-icon red">E</div><div class="legend-copy"><strong>21 EMA %</strong><span>A large gap can fade; a small gap can persist. Treat it as context only.</span></div></div></section>
           <section class="panel status-card"><h2 class="side-title">Context, not a trade list</h2><p>Confirm any observation with the five-candle sparkline and a multi-timeframe chart. This screen is for research only and is not a trading signal.</p><div class="status-bar"><span id="updatedAt">Snapshot ready</span><strong id="feedBadge">Demo data</strong></div></section>
         </aside>
       </div>
@@ -566,7 +566,8 @@
         symbol: (a, b) => a.symbol.localeCompare(b.symbol),
         change: (a, b) => b.change - a.change,
         volume: (a, b) => b.volume - a.volume,
-        ratio: (a, b) => b.ratio - a.ratio,
+         ratio: (a, b) => b.ratio - a.ratio,
+         rfactor: (a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0),
         rsi: (a, b) => b.rsi - a.rsi,
         adx: (a, b) => b.adx - a.adx,
         ema: (a, b) => Math.abs(b.ema) - Math.abs(a.ema)
@@ -582,7 +583,7 @@
       document.getElementById("positiveFoot").textContent = `${Math.round(positive / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
-       document.getElementById("tableCaption").textContent = `Lowest rank is strongest • recent continuation is weighted • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
+        document.getElementById("tableCaption").textContent = `Lowest rank is strongest • RFactor and continuation are weighted • sideways moves rank lower • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
       const feedLabels = { live: "Live", snapshot: "Snapshot", offline: "Offline" };
       const seedLabel = `Seeding (${Number(state.seedProgress.done || 0)}/${Number(state.seedProgress.total || 0)})`;
       const feedLabel = state.feedStatus === "seeding" ? seedLabel : feedLabels[state.feedStatus] || "Offline";
@@ -604,7 +605,7 @@
          return `<tr>
            <td><div class="stock-cell"><div class="stock-chip ${tone}">${chip || "•"}</div><div><div class="stock-name">${row.display}</div><div class="stock-sector">${row.sector.replaceAll("_", " ")}</div></div></div></td>
            <td class="rank">${row.rank}</td><td class="trend ${row.direction > 0 ? "up" : "down"}">${signed(row.change)}%</td><td class="trend ${row.volume >= 0 ? "up" : "down"}">${signed(row.volume)}%</td>
-           <td><span class="ratio ${row.ratio >= 1.35 ? "hot" : row.ratio < 1 ? "cool" : ""}">${formatNumber(row.ratio, 2)}×</span></td><td class="trend ${flow == null ? "" : flow >= 0 ? "up" : "down"}">${flow == null ? "—" : signed(flow, 2)}</td><td>${formatNumber(row.rsi)}</td><td><span class="metric-pill ${adxClass}">${formatNumber(row.adx)}</span></td><td class="trend ${row.ema >= 0 ? "up" : "down"}">${signed(row.ema)}%</td><td>${row.spark}</td>
+           <td><span class="ratio ${row.ratio >= 1.35 ? "hot" : row.ratio < 1 ? "cool" : ""}">${formatNumber(row.ratio, 2)}×</span></td><td>${formatNumber(row.rfactor, 2)}</td><td class="trend ${flow == null ? "" : flow >= 0 ? "up" : "down"}">${flow == null ? "—" : signed(flow, 2)}</td><td>${formatNumber(row.rsi)}</td><td><span class="metric-pill ${adxClass}">${formatNumber(row.adx)}</span></td><td class="trend ${row.ema >= 0 ? "up" : "down"}">${signed(row.ema)}%</td><td>${row.spark}</td>
         </tr>`;
       }).join("");
     }

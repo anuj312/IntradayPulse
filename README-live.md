@@ -24,12 +24,13 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Sector flow is calculated separately from quote ticks across the whole NSE universe.
 - Uses Kite historical candles to seed 5-minute and daily indicators.
 - Uses KiteTicker full-mode ticks for current price, volume, and five-point sparklines.
-- Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, volatility bucket, and momentum rank. An early spike loses rank when the stock goes sideways instead of continuing; intraday momentum uses 5-minute candles from the open, with roughly the last 15 minutes weighted most heavily.
+- Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, RFactor, volatility bucket, and momentum rank. RFactor and directional continuation now directly affect rank, so an early spike loses rank when the stock goes sideways instead of continuing. The same logic supports persistent upside and downside trends.
 - Calculates and exposes a live RFactor value; click any Sector flow bar to see its stocks sorted by RFactor.
 - Shows the cumulative KiteTicker tick count beside the feed status.
 - Serves `/api/scan` for the page and `/api/health` for feed status.
 - Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
 - Recomputes detailed rows and whole-universe Sector flow in a background cache; `/api/scan` only reads that cache, so browser polling does not rerun indicators or RFactor calculations.
+- Detects the next market day, clears prior-session ticks/history/cache, and reseeds fresh Kite history automatically without requiring a Render restart.
 
 Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
 `SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).
