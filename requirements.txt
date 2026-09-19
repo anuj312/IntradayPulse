@@ -2,3 +2,5 @@ Flask>=3.0,<4
 pandas>=2.0,<3
 kiteconnect>=5.0,<6
 gunicorn>=21,<24
+asgiref>=3.8,<4
+uvicorn[standard]>=0.30,<1

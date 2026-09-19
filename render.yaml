@@ -4,8 +4,8 @@ services:
     env: python
     plan: starter
     rootDir: outputs
-    buildCommand: python -m pip install -r requirements.txt
-    startCommand: python -m gunicorn --workers 1 --bind 0.0.0.0:$PORT live_scanner_server:app
+    buildCommand: python3 -m pip install -r requirements.txt
+    startCommand: python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:

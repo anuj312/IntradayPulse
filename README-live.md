@@ -7,12 +7,12 @@ This folder now contains a browser UI plus a small Kite-backed server. The serve
 From this folder:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-live.txt
 export KITE_API_KEY="your_kite_api_key"
 export KITE_ACCESS_TOKEN="your_daily_access_token"
-python live_scanner_server.py
+python3 live_scanner_server.py
 ```
 
 Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly if you want live values; the page must be served by `live_scanner_server.py` so it can call `/api/scan`.
@@ -32,7 +32,7 @@ The initial historical seed is deliberately paced and can take a few minutes for
 For a single-process production deployment, use one worker because the process owns one KiteTicker connection:
 
 ```bash
-gunicorn --workers 1 --bind 0.0.0.0:8050 live_scanner_server:app
+python3 -m uvicorn app:app --host 0.0.0.0 --port 8050 --workers 1
 ```
 
 ## Deploy on Render
@@ -41,7 +41,7 @@ gunicorn --workers 1 --bind 0.0.0.0:8050 live_scanner_server:app
 2. In Render, create a new Web Service from that repository.
 3. Set the Root Directory to `outputs` if the folder is inside a larger repository.
 4. Use Build Command: `pip install -r requirements-live.txt`.
-5. Use Start Command: `python -m gunicorn --workers 1 --bind 0.0.0.0:$PORT live_scanner_server:app`.
+5. Use Start Command: `python3 -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1`.
 6. Add `KITE_API_KEY` and `KITE_ACCESS_TOKEN` as secret environment variables.
 7. Deploy and open the Render URL. The health check is `/api/health`.
 
