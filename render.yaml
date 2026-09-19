@@ -4,8 +4,8 @@ services:
     env: python
     plan: starter
     rootDir: outputs
-    buildCommand: python -m pip install -r requirements.txt
-    startCommand: python -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+    buildCommand: /opt/render/project/python/bin/python -m pip install -r requirements.txt
+    startCommand: /opt/render/project/python/bin/python -m uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
