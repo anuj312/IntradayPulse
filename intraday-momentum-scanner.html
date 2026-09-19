@@ -969,8 +969,8 @@ td { font-size: 12px; }
     `Sample snapshot • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 
   scheduleRender();
-  loadLiveData();
-  setInterval(() => loadLiveData(), POLL_MS);
+  loadLiveData(true);
+  setInterval(() => loadLiveData(false), 5000);
 </script>
 </body>
 </html>
