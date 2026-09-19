@@ -840,10 +840,20 @@ def _aggregate_index(name: str, rows: List[dict]) -> Optional[dict]:
     }
 
 
+def _directional_rank(rows: List[dict], score_key: str) -> List[dict]:
+    positive = [row for row in rows if int(row.get("direction") or 0) >= 0]
+    negative = [row for row in rows if int(row.get("direction") or 0) < 0]
+    positive.sort(key=lambda row: float(row.get(score_key) or 0.0), reverse=True)
+    negative.sort(key=lambda row: float(row.get(score_key) or 0.0), reverse=True)
+    for group in (positive, negative):
+        for position, row in enumerate(group, start=1):
+            row["rank"] = position
+    return positive + negative
+
+
 def _rank(rows: List[dict]) -> List[dict]:
-    rows.sort(key=lambda row: float(row.get("score") or 0.0), reverse=True)
-    for position, row in enumerate(rows, start=1):
-        row["rank"] = position
+    rows[:] = _directional_rank(rows, "score")
+    for row in rows:
         row["_scan_score"] = row.get("score")
         row.pop("score", None)
     return rows
@@ -867,7 +877,7 @@ def build_rows(timeframe: str, universe: str, sector: str) -> List[dict]:
     for group, symbols in SECTOR_DEFINITIONS.items():
         for symbol in symbols:
             membership.setdefault(symbol, group)
-    symbols = list(dict.fromkeys(SECTOR_DEFINITIONS.get(sector, []))) if sector != "all" else list(membership)
+    symbols = list(dict.fromkeys(SECTOR_DEFINITIONS.get(sector, []))) if sector != "ALL" else list(membership)
     if FAST_MODE:
         symbols = [symbol for symbol in symbols if symbol in detail_symbols]
     rows = [_build_row(symbol, membership.get(symbol, sector), timeframe) for symbol in symbols]
@@ -880,9 +890,8 @@ def _rows_from_cache(timeframe: str, universe: str, sector: str) -> List[dict]:
         rows = [dict(row) for row in SCAN_CACHE.get(timeframe, {}).get(universe, [])]
     if universe == "stocks" and sector != "ALL":
         rows = [row for row in rows if row.get("sector") == sector]
-    rows.sort(key=lambda row: float(row.get("_scan_score") or 0.0), reverse=True)
-    for position, row in enumerate(rows, start=1):
-        row["rank"] = position
+    rows = _directional_rank(rows, "_scan_score")
+    for row in rows:
         row.pop("_scan_score", None)
     return rows
 

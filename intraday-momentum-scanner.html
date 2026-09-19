@@ -383,7 +383,7 @@
       </section>
       <div class="content-grid">
         <section class="panel" aria-label="Momentum rankings">
-          <div class="panel-head"><div><h2 class="panel-title">Momentum rankings</h2><p class="panel-caption" id="tableCaption">Lowest rank is strongest • RFactor and continuation are weighted • sideways moves rank lower</p></div><div class="view-toggle"><button class="active" data-view="table" type="button">Table</button><button data-view="compact" type="button">Compact</button></div></div>
+          <div class="panel-head"><div><h2 class="panel-title">Momentum rankings</h2><p class="panel-caption" id="tableCaption">Positive and negative names rank separately • lowest rank is strongest • sideways moves rank lower</p></div><div class="view-toggle"><button class="active" data-view="table" type="button">Table</button><button data-view="compact" type="button">Compact</button></div></div>
           <div class="table-wrap"><table><thead><tr><th><button data-sort="symbol" type="button">Name</button></th><th><button data-sort="rank" type="button">Rank ↕</button></th><th><button data-sort="change" type="button">LTP %</button></th><th><button data-sort="volume" type="button">Volume %</button></th><th><button data-sort="ratio" type="button">Vol ratio</button></th><th><button data-sort="rfactor" type="button">RFactor</button></th><th>Buy-sell Δ</th><th><button data-sort="rsi" type="button">RSI</button></th><th><button data-sort="adx" type="button">ADX</button></th><th><button data-sort="ema" type="button">21 EMA %</button></th><th>5 candles</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No names match these filters.</div></div>
         </section>
         <aside class="side">
@@ -481,8 +481,10 @@
       return symbols.map((symbol, i) => makeRow(symbol, membership.get(symbol) || state.sector, i));
     }
     function rankRows(rows) {
-      [...rows].sort((a, b) => b.score - a.score).forEach((row, i) => { row.rank = i + 1; row.rfactor = Number(row.rfactor ?? row.score ?? 0); });
-      return rows;
+      const positive = rows.filter(row => row.direction >= 0).sort((a, b) => b.score - a.score);
+      const negative = rows.filter(row => row.direction < 0).sort((a, b) => b.score - a.score);
+      [positive, negative].forEach(group => group.forEach((row, i) => { row.rank = i + 1; row.rfactor = Number(row.rfactor ?? row.score ?? 0); }));
+      return [...positive, ...negative];
     }
     function formatNumber(number, digits = 1) { return Number(number).toFixed(digits); }
     function getFilteredRows(allRows) {
@@ -583,7 +585,7 @@
       document.getElementById("positiveFoot").textContent = `${Math.round(positive / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
-        document.getElementById("tableCaption").textContent = `Lowest rank is strongest • RFactor and continuation are weighted • sideways moves rank lower • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
+        document.getElementById("tableCaption").textContent = `Positive and negative names rank separately • lowest rank is strongest • sideways moves rank lower • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
       const feedLabels = { live: "Live", snapshot: "Previous session", offline: "Offline" };
       const seedLabel = `Seeding (${Number(state.seedProgress.done || 0)}/${Number(state.seedProgress.total || 0)})`;
       const feedLabel = state.feedStatus === "seeding" ? seedLabel : feedLabels[state.feedStatus] || "Offline";
