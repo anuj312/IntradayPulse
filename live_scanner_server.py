@@ -89,6 +89,18 @@ def market_is_open(now: Optional[datetime] = None) -> bool:
     return dtime(9, 15) <= now.time() <= dtime(15, 30)
 
 
+def _has_current_session_data(now: Optional[datetime] = None) -> bool:
+    now = now or datetime.now(IST)
+    if LAST_TICK_TS and datetime.fromtimestamp(LAST_TICK_TS, IST).date() == now.date():
+        return True
+    with DATA_LOCK:
+        for histories in HISTORY.values():
+            for frame in histories.values():
+                if not frame.empty and frame.iloc[-1]["date"].date() == now.date():
+                    return True
+    return False
+
+
 def _as_float(value: Any) -> Optional[float]:
     try:
         number = float(value)
@@ -388,7 +400,7 @@ def _start_daily_refresh() -> None:
         while True:
             now = datetime.now(IST)
             seeded_date = HISTORY_SEED_DATE
-            if market_is_open(now) and seeded_date is not None and seeded_date < now.date():
+            if market_is_open(now) and seeded_date is not None and seeded_date < now.date() and _has_current_session_data(now):
                 _reset_for_new_market_day(now.date())
                 try:
                     _start_history_seed(force=True)
@@ -484,11 +496,24 @@ def _history_state(token: int, timeframe: str) -> Optional[tuple[pd.DataFrame, f
     if frame is None or frame.empty:
         return None
     last = frame.iloc[-1]
-    ltp = _as_float(tick.get("ltp")) or _as_float(last.get("close"))
+    tick_ltp = _as_float(tick.get("ltp"))
+    ltp = tick_ltp or _as_float(last.get("close"))
     volume = _as_float(tick.get("volume")) or _as_float(last.get("volume")) or 0.0
     ohlc = tick.get("ohlc") if isinstance(tick.get("ohlc"), dict) else {}
     if not ohlc:
-        ohlc = {"open": last.get("open"), "high": last.get("high"), "low": last.get("low"), "close": last.get("close")}
+        if timeframe == "intraday":
+            latest_date = last["date"].date()
+            session = frame[frame["date"].dt.date == latest_date]
+            ohlc = {
+                "open": session.iloc[0]["open"],
+                "high": session["high"].max(),
+                "low": session["low"].min(),
+                "close": session.iloc[-1]["close"],
+            }
+            if tick_ltp is None:
+                volume = float(session["volume"].sum())
+        else:
+            ohlc = {"open": last.get("open"), "high": last.get("high"), "low": last.get("low"), "close": last.get("close")}
     if ltp is None:
         return None
     return frame.copy(), float(ltp), float(volume), ohlc
@@ -638,37 +663,33 @@ def _sparkline(prices: List[float], positive: bool) -> str:
 
 
 def _rfactor(token: int, timeframe: str, ltp: float, volume: float, high: float, low: float, change: float) -> float:
-    """Compact live equivalent of the supplied dashboard RFactor formula."""
+    """Match the RFactor formula from dashboard_clean.py."""
     with DATA_LOCK:
         daily = HISTORY.get(token, {}).get("regular")
     if daily is None or daily.empty:
         return 0.0
     stats = daily[daily["volume"] > 0].copy()
-    if market_is_open() and not stats.empty and stats.iloc[-1]["date"].date() == datetime.now(IST).date():
-        stats = stats.iloc[:-1]
-    stats = stats.tail(20)
     if stats.empty:
+        return 0.0
+    stats["change"] = stats["close"].pct_change() * 100.0
+    stats = stats.tail(20)
+    close = float(ltp or 0.0)
+    vol = float(volume or 0.0)
+    if vol <= 0 or close <= 0 or stats.empty:
         return 0.0
     avg_vol = float(stats["volume"].mean())
     avg_range = float((stats["high"] - stats["low"]).mean())
-    avg_move = float((((stats["close"] - stats["open"]) / stats["open"]) * 100.0).abs().mean())
-    if min(avg_vol, avg_range, avg_move) <= 0:
+    avg_move = float(stats["change"].abs().mean())
+    baselines = (avg_vol, avg_range, avg_move)
+    if not all(math.isfinite(value) and value > 0 for value in baselines):
         return 0.0
-    now = datetime.now(IST)
-    if timeframe == "intraday":
-        opened = now.replace(hour=9, minute=15, second=0, microsecond=0)
-        elapsed = 1.0 if now <= opened else max(1.0, min(375.0, (now - opened).total_seconds() / 60.0))
-        expected_volume = avg_vol * (elapsed / 375.0)
-    else:
-        expected_volume = avg_vol
-    rvol = max(volume / (expected_volume + 1e-9), 0.001)
-    range_factor = max((high - low) / (avg_range + 1e-9), 0.001)
-    move_factor = max(abs(change) / (avg_move + 1e-9), 0.001)
+    rvol = vol / avg_vol
+    range_factor = (high - low) / avg_range
+    move_factor = abs(change) / avg_move
     raw = (rvol ** 0.55) * (range_factor ** 0.30) * (move_factor ** 0.15)
-    span = max(high - low, 1e-9)
-    position = max(0.0, min(1.0, (ltp - low) / span))
+    position = (close - low) / ((high - low) + 1e-9)
     freshness = position ** 3 if change >= 0 else (1.0 - position) ** 3
-    if (high - low) / max(ltp, 1e-9) * 100.0 < 0.60:
+    if (high - low) / close * 100.0 < 0.60:
         raw *= 0.12
     raw *= max(freshness, 0.001)
     return round(3.5 * math.log1p(max(raw, 0.0)), 2)
@@ -946,6 +967,8 @@ def _feed_status() -> tuple[str, bool]:
         return "seeding", bool(TICKER_CONNECTED and fresh)
     if TICKER_CONNECTED and fresh:
         return "live", True
+    if not _has_current_session_data():
+        return "previous_session", False
     return "waiting_for_ticks", False
 
 
