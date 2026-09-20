@@ -462,7 +462,10 @@ def _start_ticker() -> None:
 
     def run() -> None:
         global TICKER_CONNECTED, TICKER_WS, LAST_TICK_TS, TOTAL_TICKS
+
         while True:
+            closed = threading.Event()
+
             try:
                 ticker = KiteTicker(API_KEY, ACCESS_TOKEN)
 
@@ -471,10 +474,13 @@ def _start_ticker() -> None:
                     TICKER_WS = ws
                     ws.subscribe(tokens)
                     ws.set_mode(ws.MODE_QUOTE, tokens)
+
+                    # FULL mode only for selected detail symbols (may be empty).
                     with DATA_LOCK:
                         selected_tokens = [SYMBOL_TO_TOKEN[s] for s in DETAIL_SYMBOLS if s in SYMBOL_TO_TOKEN]
                     if selected_tokens:
                         ws.set_mode(ws.MODE_FULL, selected_tokens)
+
                     TICKER_CONNECTED = True
                     log.info(
                         "KiteTicker connected: %s quote tokens, %s full-depth tokens",
@@ -495,19 +501,34 @@ def _start_ticker() -> None:
                     global TICKER_CONNECTED, TICKER_WS
                     TICKER_CONNECTED = False
                     TICKER_WS = None
-                    log.warning("KiteTicker connection closed")
+                    log.warning("KiteTicker connection closed: %s", _reason)
+                    closed.set()
+
+                def on_error(_ws, _code, _reason):
+                    global TICKER_CONNECTED, TICKER_WS
+                    TICKER_CONNECTED = False
+                    TICKER_WS = None
+                    log.error("KiteTicker error: %s", _reason)
+                    closed.set()
 
                 ticker.on_connect = on_connect
                 ticker.on_ticks = on_ticks
                 ticker.on_close = on_close
+                ticker.on_error = on_error
+
+                # IMPORTANT: threaded=True avoids Twisted signal handler issues on Render.
                 ticker.connect(threaded=True)
+
+                # IMPORTANT: wait here so we don't spawn infinite tickers.
+                closed.wait()
+                time.sleep(2)
+
             except Exception:
                 TICKER_CONNECTED = False
                 log.exception("KiteTicker stopped; retrying in 5 seconds")
                 time.sleep(5)
 
     threading.Thread(target=run, name="kite-ticker", daemon=True).start()
-
 
 # ----------------------------
 # Fast mode symbol selection / rotation
