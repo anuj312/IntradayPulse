@@ -451,6 +451,78 @@
       .sector-modal-backdrop { padding: 12px; }
       .sector-modal { border-radius: 15px; }
     }
+
+    @media (max-width: 640px) {
+  .content-grid > .panel {
+    height: 820px;
+  }
+
+  .leaders-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leader-column {
+    min-height: 365px;
+    padding: 15px 3px 0;
+  }
+
+  .leader-column + .leader-column {
+    margin-left: 0;
+    padding: 18px 3px 0;
+    border-top: 1px solid #e5ebf2;
+    border-left: 0;
+  }
+
+  .leader-list {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .leader-table th {
+    padding: 8px 1px;
+    font-size: 7px;
+  }
+
+  .leader-table td {
+    padding: 9px 1px;
+    font-size: 9px;
+  }
+
+  .leader-stock {
+    gap: 6px;
+  }
+
+  .leader-chip {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+  }
+
+  .leader-table .leader-name {
+    font-size: 9px;
+  }
+
+  .leader-sector {
+    font-size: 8px;
+  }
+
+  .leader-table .leader-rank,
+  .leader-table .leader-ltp,
+  .leader-table .leader-ratio,
+  .leader-table .leader-rsi,
+  .leader-table .leader-adx {
+    font-size: 9px;
+  }
+
+  .leader-table .leader-adx {
+    min-width: 30px;
+    padding: 3px;
+  }
+
+  .leaders-side .access-cta {
+    top: 28%;
+  }
+}
   </style>
 </head>
 <body>
