@@ -1,11 +1,7 @@
-"""ASGI entrypoint for Uvicorn.
+"""WSGI entrypoint for Gunicorn.
 
-Usage: uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+Usage on Render:
+  gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --worker-class gthread --threads 8 --timeout 120
 """
 
-from asgiref.wsgi import WsgiToAsgi
-
-from live_scanner_server import app as flask_app
-
-
-app = WsgiToAsgi(flask_app)
+from live_scanner_server import app  # Flask app

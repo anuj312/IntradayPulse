@@ -500,7 +500,7 @@ def _start_ticker() -> None:
                 ticker.on_connect = on_connect
                 ticker.on_ticks = on_ticks
                 ticker.on_close = on_close
-                ticker.connect(threaded=False)
+                ticker.connect(threaded=True)
             except Exception:
                 TICKER_CONNECTED = False
                 log.exception("KiteTicker stopped; retrying in 5 seconds")
