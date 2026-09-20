@@ -81,7 +81,9 @@
     .summary-foot { color: var(--muted); font-size: 10px; }
     .summary-foot.up { color: var(--green); font-weight: 700; }
     .summary-foot.down { color: var(--red); font-weight: 700; }
-    .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 294px; align-items: start; gap: 18px; }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; align-items: stretch; gap: 18px; }
+    .content-grid > .panel { display: flex; height: 780px; min-height: 0; flex-direction: column; }
+    .content-grid > .side { height: 780px; min-height: 0; }
     .panel { background: white; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
     .panel-head { padding: 17px 19px 13px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .panel-title { margin: 0; font-size: 15px; letter-spacing: -.025em; font-weight: 780; }
@@ -90,14 +92,14 @@
     .view-toggle button { border: 0; background: transparent; color: #8590a0; border-radius: 5px; padding: 5px 7px; font-size: 10px; font-weight: 760; }
     .view-toggle button.active { background: #eef2f5; color: var(--ink); }
     .table-wrap { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; min-width: 710px; }
+    .content-grid > .panel .table-wrap { min-height: 0; flex: 1 1 auto; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 820px; }
     th { color: #8993a2; background: #fcfcfd; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; text-align: right; padding: 11px 10px; white-space: nowrap; border-bottom: 1px solid var(--line); }
+    .content-grid > .panel th { position: sticky; top: 0; z-index: 2; }
     th:first-child, td:first-child { text-align: left; padding-left: 19px; }
     th button { color: inherit; background: none; border: 0; padding: 0; font-size: inherit; text-transform: inherit; letter-spacing: inherit; font-weight: inherit; }
     th button:hover { color: var(--ink); }
     td { padding: 12px 10px; border-bottom: 1px solid #f0f2f5; color: #2a3444; font-size: 11px; text-align: right; white-space: nowrap; }
-    table.compact { min-width: 500px; }
-    table.compact th:nth-child(4), table.compact td:nth-child(4), table.compact th:nth-child(5), table.compact td:nth-child(5), table.compact th:nth-child(9), table.compact td:nth-child(9), table.compact th:nth-child(10), table.compact td:nth-child(10) { display: none; }
     tbody tr { transition: background .15s ease; }
     tbody tr:hover { background: #fafcfd; }
     .stock-cell { display: flex; align-items: center; gap: 9px; min-width: 144px; }
@@ -132,9 +134,6 @@
     .legend-icon.red { background: var(--red-soft); color: var(--red); }
     .legend-copy strong { display: block; font-size: 11px; margin-bottom: 3px; }
     .legend-copy span { display: block; color: var(--muted); font-size: 10px; line-height: 1.45; }
-    .status-card { background: #172236 !important; border-color: #172236 !important; color: white; }
-    .status-card .side-title { color: white; margin-bottom: 9px; }
-    .status-card p { color: #b3c0d4; font-size: 11px; line-height: 1.55; margin: 0; }
     .status-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 11px; border-top: 1px solid #354157; color: #91a3be; font-size: 10px; }
     .status-bar strong { color: #b8f4d7; font-size: 10px; }
     .footer-note { display: flex; align-items: center; gap: 8px; color: #8993a2; font-size: 10px; margin-top: 17px; }
@@ -194,13 +193,81 @@
     .sector-stock-dot.negative { background: var(--red); }
     .sector-stock-rfactor { color: var(--blue); font-weight: 850; }
     .sector-modal-empty { color: var(--muted); padding: 22px 19px; font-size: 11px; }
+    .leaders-side { display: flex; min-height: 0; flex-direction: column; padding: 0 !important; }
+    .leaders-grid { display: grid; grid-template-columns: 1fr 1fr; flex: 1 1 auto; min-height: 0; gap: 0; padding: 0 14px 16px; }
+    .leader-column { display: flex; min-width: 0; min-height: 0; flex-direction: column; padding: 15px 7px 0; }
+    .leader-column + .leader-column { margin-left: 4px; padding-left: 12px; border-left: 1px solid #e5ebf2; }
+    .leader-column-head { display: flex; align-items: center; gap: 6px; padding: 0 2px 10px; color: #233653; }
+    .leader-column-head h3 { flex: 1; margin: 0; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .leader-column-head > span:last-child { color: #91a0b3; font-size: 9px; font-weight: 800; }
+    .leader-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+    .losers .leader-dot { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+    .leader-list { min-height: 0; flex: 1 1 auto; overflow-y: auto; scrollbar-color: #b3c1d3 #f0f3f7; scrollbar-width: thin; }
+    .leader-list::-webkit-scrollbar { width: 8px; }
+    .leader-list::-webkit-scrollbar-track { background: #f0f3f7; border-radius: 99px; }
+    .leader-list::-webkit-scrollbar-thumb { background: #b3c1d3; border: 2px solid #f0f3f7; border-radius: 99px; }
+    .leader-table { width: 100%; min-width: 0; border-collapse: collapse; table-layout: fixed; }
+    .leader-table th { height: auto; padding: 7px 2px; background: #f7f9fc; color: #8b99ab; font-size: 8px; letter-spacing: .08em; }
+    .leader-table th:first-child, .leader-table td:first-child { padding-left: 4px; }
+    .leader-table td { overflow: hidden; padding: 9px 2px; color: #314158; font-size: 10px; text-overflow: ellipsis; }
+    .leader-table th:not(:first-child), .leader-table td:not(:first-child) { text-align: right; }
+    .leader-table tbody tr { border-bottom: 1px solid #edf1f5; }
+    .leader-table tbody tr:hover { background: #f7fbff; }
+    .leader-stock { display: flex; min-width: 0; align-items: center; gap: 9px; text-align: left; }
+    .leader-chip { width: 31px; height: 31px; flex: 0 0 31px; display: grid; place-items: center; border-radius: 9px; font-size: 10px; font-weight: 850; }
+    .leader-chip.positive { background: var(--green-soft); color: #087252; }
+    .leader-chip.negative { background: var(--red-soft); color: #a5303c; }
+    .leader-copy { min-width: 0; }
+    .leader-table .leader-name { overflow: hidden; color: #172943; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .leader-sector { margin-top: 3px; overflow: hidden; color: #99a1ad; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .leader-table .leader-rank { color: #1b2f4d; font-size: 11px; font-weight: 850; font-variant-numeric: tabular-nums; }
+    .leader-table .leader-ltp { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .leader-table .leader-ratio { color: #58709a; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .leader-table .leader-ratio.ratio-high { color: var(--green); font-weight: 800; }
+    .leader-table .leader-ratio.ratio-low { color: #b97820; font-weight: 800; }
+    .leader-table .leader-rsi { color: #67788f; font-size: 10px; font-variant-numeric: tabular-nums; }
+    .leader-table .leader-rsi.rsi-high { color: var(--green); font-weight: 800; }
+    .leader-table .leader-rsi.rsi-low { color: var(--red); font-weight: 800; }
+    .leader-table .leader-adx { display: inline-flex; min-width: 37px; justify-content: center; border-radius: 99px; padding: 3px 6px; color: #67788f; font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .leader-table .leader-adx.adx-high { background: var(--green-soft); color: #087252; }
+    .leader-table .leader-adx.adx-mid { background: var(--amber-soft); color: #9a641c; }
+    .leader-table .leader-adx.adx-low { background: #f0f2f5; color: #6e7785; }
+    .gainers .leader-ltp { color: var(--green); }
+    .losers .leader-ltp { color: var(--red); }
+    .leaders-side, .flow-panel { position: relative; }
+    .leaders-side .access-cta { top: 32%; }
+    .leaders-side .leader-table tbody, .flow-panel .flow-list { filter: blur(4px); opacity: .48; pointer-events: none; user-select: none; }
+    .access-cta { position: absolute; top: 54%; left: 50%; z-index: 4; display: grid; width: min(360px, calc(100% - 40px)); gap: 12px; transform: translate(-50%, -50%); padding: 23px 30px; border: 1px solid rgba(179, 198, 222, .78); border-radius: 20px; background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(246, 250, 255, .96) 58%, rgba(238, 253, 247, .94)); box-shadow: 0 30px 70px rgba(16, 37, 67, .2), 0 8px 20px rgba(16, 37, 67, .08), inset 0 1px 0 rgba(255, 255, 255, .95); backdrop-filter: blur(18px); isolation: isolate; text-align: center; }
+    .access-cta::after { content: ""; position: absolute; inset: 1px; z-index: -1; border-radius: 19px; background: radial-gradient(circle at 12% 0%, rgba(184, 244, 215, .32), transparent 42%), radial-gradient(circle at 100% 100%, rgba(58, 103, 219, .12), transparent 44%); pointer-events: none; }
+    .access-logout { display: none; }
+    body.access-granted .access-logout { display: inline-flex; }
+    body.access-granted .leaders-side .leader-table tbody, body.access-granted .flow-panel .flow-list { filter: none; opacity: 1; pointer-events: auto; user-select: auto; }
+    body.access-granted .access-cta { display: none; }
+    .access-form { display: grid; gap: 9px; }
+    .access-form input { width: 100%; border: 1px solid #d4dfec; border-radius: 12px; padding: 14px 14px; outline: none; background: rgba(255, 255, 255, .82); color: var(--ink); font-size: 14px; font-weight: 650; letter-spacing: .01em; text-align: center; box-shadow: inset 0 1px 2px rgba(25, 48, 80, .04), 0 5px 14px rgba(25, 48, 80, .05); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+    .access-form input::placeholder { color: #7b8798; font-weight: 550; }
+    .access-form input:focus { border-color: #4c83d7; box-shadow: 0 0 0 4px rgba(76, 131, 215, .14), 0 8px 18px rgba(25, 48, 80, .08); transform: translateY(-1px); }
+    .access-submit { border: 0; border-radius: 12px; padding: 13px 12px; background: linear-gradient(135deg, #172746 0%, #0b1427 55%, #263e69 100%); color: white; font-size: 14px; font-weight: 800; letter-spacing: .01em; box-shadow: 0 10px 18px rgba(15, 31, 57, .2), inset 0 1px 0 rgba(255, 255, 255, .14); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+    .access-submit:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 15px 25px rgba(15, 31, 57, .25), inset 0 1px 0 rgba(255, 255, 255, .18); }
+    .access-submit:active { transform: translateY(0); }
+    .access-error { margin-top: 10px; color: var(--red); font-size: 10px; line-height: 1.4; }
+    .access-link { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 72px; gap: 5px; margin-top: 0; overflow: hidden; padding: 13px 16px; border: 1px solid rgba(255, 255, 255, .42); border-radius: 14px; background: linear-gradient(120deg, #087b69 0%, #08a981 45%, #147cac 100%); color: white; font-size: 14px; font-weight: 850; letter-spacing: -.01em; line-height: 1.3; text-align: center; text-decoration: none; box-shadow: 0 14px 26px rgba(7, 126, 122, .24), inset 0 1px 0 rgba(255, 255, 255, .34); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+    .access-link-lead { display: inline-flex; align-items: center; gap: 8px; color: rgba(255, 255, 255, .9); font-size: 10px; font-weight: 900; letter-spacing: .16em; line-height: 1; text-transform: uppercase; }
+    .access-link-lead::after { content: ""; width: 24px; height: 2px; border-radius: 99px; background: #b8f4d7; box-shadow: 0 0 10px rgba(184, 244, 215, .8); }
+    .access-link-title { display: block; font-size: 15px; font-weight: 900; letter-spacing: -.015em; line-height: 1.2; }
+    .access-link::after { content: ""; position: absolute; top: -80%; left: -35%; width: 24%; height: 260%; transform: rotate(24deg); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38), transparent); transition: left .65s ease; pointer-events: none; }
+    .access-link:hover { transform: translateY(-2px); filter: saturate(1.12) brightness(1.04); box-shadow: 0 18px 32px rgba(7, 126, 122, .3), inset 0 1px 0 rgba(255, 255, 255, .4); }
+    .access-link:hover::after { left: 118%; }
+    .access-link:focus-visible { outline: 3px solid rgba(66, 100, 215, .3); outline-offset: 3px; }
+
     @media (max-width: 1120px) {
       .rail { width: 208px; flex-basis: 208px; }
       .main { padding-left: 25px; padding-right: 25px; }
       .content-grid { grid-template-columns: 1fr; }
+      .content-grid > .panel, .content-grid > .side { height: 700px; }
       .side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .status-card { grid-column: span 2; }
     }
+
     @media (max-width: 760px) {
       .app { display: block; }
       .rail { width: 100%; height: auto; padding: 14px 14px 12px; display: block; }
@@ -209,6 +276,7 @@
       .nav button { width: auto; white-space: nowrap; padding: 9px 11px; }
       .rail-label, .rail-spacer, .rail-note, .profile { display: none; }
       .main { padding: 22px 14px 34px; }
+      .content-grid > .panel, .content-grid > .side { height: 620px; }
       .topline { display: block; }
       .top-actions { margin-top: 15px; }
       .toolbar { gap: 8px; }
@@ -236,7 +304,6 @@
       .flow-row:last-child { border-bottom: 0; }
       .panel-head { padding-left: 14px; padding-right: 14px; }
       .side { grid-template-columns: 1fr; }
-      .status-card { grid-column: auto; }
     }
 
     /* Premium visual pass */
@@ -311,7 +378,6 @@
     .metric-pill { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
     .side .panel { box-shadow: 0 12px 28px rgba(42, 60, 91, .05); }
     .legend-row { border-top-color: #edf1f5; }
-    .status-card { background: linear-gradient(150deg, #182842, #0e1728) !important; box-shadow: 0 18px 30px rgba(13, 23, 41, .18) !important; }
     .flow-panel { border-color: #4c4f83; box-shadow: 0 20px 46px rgba(16, 23, 45, .18), 0 0 0 1px rgba(168, 137, 255, .2); }
     .flow-head { padding: 18px 21px 15px; background: linear-gradient(180deg, rgba(22, 34, 58, .72), rgba(14, 23, 40, .3)); }
     .flow-sort { box-shadow: inset 0 0 0 1px rgba(176, 192, 255, .1); }
@@ -324,6 +390,47 @@
     .sector-modal-columns { color: #8491a4; }
     .sector-stock-rfactor { font-variant-numeric: tabular-nums; }
     .footer-note { color: #7c899d; }
+    body { background: radial-gradient(circle at 83% -8%, rgba(197, 218, 255, .48), transparent 28%), radial-gradient(circle at 20% 0%, rgba(219, 248, 236, .34), transparent 24%), #f5f7fb; }
+    .main { position: relative; }
+    .topline { margin-bottom: 27px; }
+    .eyebrow { display: inline-flex; align-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 11px; letter-spacing: .18em; }
+    #feedStatusText { text-transform: uppercase; }
+    .eyebrow .live-dot { width: 10px; height: 10px; box-shadow: 0 0 0 6px rgba(13, 155, 115, .11); }
+    h1 { margin-top: 11px; background: linear-gradient(105deg, #10203a 0%, #203b68 52%, #0d8568 112%); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
+    .subhead { color: #78869d; }
+    .content-grid { grid-template-columns: 1fr; gap: 22px; }
+    .content-grid > .panel, .content-grid > .side { height: 790px; }
+    .panel { border-color: rgba(207, 217, 232, .9); border-radius: 22px; box-shadow: 0 24px 55px rgba(36, 54, 88, .09), 0 2px 4px rgba(26, 39, 63, .04); }
+    .content-grid > .panel { background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%); }
+    .panel-head { min-height: 87px; padding: 23px 24px 18px; background: linear-gradient(135deg, rgba(255,255,255,.98), rgba(246,249,253,.92)); border-bottom-color: #e6ebf2; position: relative; }
+    .panel-head::after { content: ""; position: absolute; left: 24px; bottom: -1px; width: 58px; height: 3px; border-radius: 99px; background: linear-gradient(90deg, #13a37b, #75dfb5); }
+    .panel-title { font-size: 18px; font-weight: 850; letter-spacing: -.045em; color: #14223a; }
+    .panel-caption { margin-top: 7px; color: #8190a7; font-size: 10px; letter-spacing: .01em; }
+    .view-toggle { border-color: #dce4ef; background: #f5f8fb; }
+    .view-toggle button { padding: 7px 9px; }
+    .view-toggle button.active { color: #17304f; background: white; box-shadow: 0 4px 11px rgba(40, 64, 98, .12), inset 0 0 0 1px #dce5f0; }
+    .table-wrap { background: rgba(255, 255, 255, .64); scrollbar-width: thin; scrollbar-color: #aebed3 #eef2f7; }
+    .table-wrap::-webkit-scrollbar { width: 9px; height: 9px; }
+    .table-wrap::-webkit-scrollbar-track { background: #eef2f7; border-radius: 99px; }
+    .table-wrap::-webkit-scrollbar-thumb { background: #aebed3; border: 2px solid #eef2f7; border-radius: 99px; }
+    th { height: 40px; padding-top: 13px; padding-bottom: 13px; background: linear-gradient(180deg, #f7faff, #f1f5f9); color: #8190a5; font-size: 8px; letter-spacing: .12em; }
+    td { padding-top: 14px; padding-bottom: 14px; color: #344257; }
+    tbody tr:hover { background: linear-gradient(90deg, rgba(237, 249, 244, .7), rgba(246, 250, 255, .9)); }
+    tbody tr:has(.stock-chip.green) td:first-child { box-shadow: inset 3px 0 #68d3aa; }
+    tbody tr:has(.stock-chip.red) td:first-child { box-shadow: inset 3px 0 #ef9298; }
+    .stock-cell { gap: 11px; }
+    .stock-chip { width: 32px; height: 32px; border-radius: 10px; font-size: 9px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.75), 0 4px 10px rgba(42, 65, 98, .08); }
+    .stock-chip.green { background: linear-gradient(145deg, #e8fbf2, #d4f4e7); }
+    .stock-chip.red { background: linear-gradient(145deg, #fff2f2, #ffe1e4); }
+    .stock-name { font-size: 11px; letter-spacing: .01em; }
+    .stock-sector { color: #9aa7b9; letter-spacing: .02em; }
+    .rank { color: #1b2f4d; font-size: 12px; }
+    .trend { font-size: 11px; }
+    .footer-note { padding-left: 4px; }
+    @media (max-width: 1120px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .content-grid > .panel, .content-grid > .side { height: 700px; }
+    }
     @media (max-width: 760px) {
       .rail { position: static; height: auto; box-shadow: none; }
       .rail::after { display: none; }
@@ -334,6 +441,12 @@
       .summary-grid { gap: 9px; }
       .summary-card { border-radius: 15px; }
       .panel { border-radius: 16px; }
+      .panel-head { padding-left: 18px; padding-right: 18px; }
+      .panel-head::after { left: 18px; }
+      .leaders-grid { padding-left: 10px; padding-right: 10px; }
+      .leader-column { padding-left: 4px; padding-right: 4px; }
+      .leader-column + .leader-column { padding-left: 8px; }
+      .content-grid > .panel, .content-grid > .side { height: 620px; }
       .flow-head { padding-top: 17px; padding-bottom: 14px; }
       .sector-modal-backdrop { padding: 12px; }
       .sector-modal { border-radius: 15px; }
@@ -343,70 +456,146 @@
 <body>
   <div class="app">
     <aside class="rail">
-      <div class="brand"><div class="brand-mark">P/</div><div class="brand-name">pulse <span>/ research</span></div></div>
+      <div class="brand"><div class="brand-mark">P/</div><div class="brand-name">Pulse<span>/Research</span></div></div>
       <div class="rail-label">Workspace</div>
       <nav class="nav" aria-label="Primary navigation">
-        <button class="active" type="button"><span class="nav-icon">◈</span>Momentum scanner</button>
-        <button type="button" data-scroll="sectorFlow"><span class="nav-icon">▥</span>Sector flow</button>
-        <button type="button"><span class="nav-icon">▦</span>Market map</button>
-        <button type="button"><span class="nav-icon">◷</span>Saved views</button>
+        <button class="active" type="button"><span class="nav-icon">◈</span>MOMENTUM SCANNER</button>
+        <button type="button" data-scroll="sectorFlow"><span class="nav-icon">▥</span>SECTOR FLOW</button>
+        <button type="button"><span class="nav-icon">◷</span>SAVED VIEWS</button>
       </nav>
       <div class="rail-spacer"></div>
       <div class="rail-note"><strong>Research mode</strong>Momentum is a way to frame attention, not a recommendation to buy or sell.</div>
       <div class="profile"><div class="avatar">DR</div><div>Desk view<small>Personal workspace</small></div></div>
     </aside>
+
     <main class="main">
       <div class="topline">
         <div>
           <div class="eyebrow" id="feedStatus"><span class="live-dot"></span><span id="feedStatusText">Market pulse / NSE universe · demo</span></div>
-          <h1 id="pageTitle">Intraday momentum scanner</h1>
-          <p class="subhead" id="pageSubhead">Rank the names moving now by participation, trend strength, and momentum. Start with the lowest rank, then validate on a chart.</p>
+          <h1 id="pageTitle">Intraday Momentum Scanner</h1>
+          <p class="subhead" id="pageSubhead" hidden></p>
         </div>
-        <div class="top-actions"><span class="feed-chip" id="feedChip"><span class="feed-chip-dot"></span><span id="feedChipText">Offline</span></span><span class="ticks-chip" id="ticksChip">Ticks --</span><button class="action" id="helpBtn" type="button">How to read</button><button class="action primary" id="refreshBtn" type="button">↻ Refresh scan</button></div>
+        <div class="top-actions">
+          <span class="feed-chip" id="feedChip"><span class="feed-chip-dot"></span><span id="feedChipText">Offline</span></span>
+          <span class="ticks-chip" id="ticksChip">Ticks --</span>
+          <button class="action access-logout" id="logoutBtn" type="button">Log out</button>
+          <button class="action primary" id="refreshBtn" type="button">↻ Refresh scan</button>
+        </div>
       </div>
+
       <section class="toolbar" aria-label="Scanner controls">
-        <div class="segmented" data-group="direction"><button class="active" data-value="all" type="button">All</button><button data-value="positive" type="button">Positive</button><button data-value="negative" type="button">Negative</button></div>
+        <div class="segmented" data-group="direction">
+          <button class="active" data-value="all" type="button">All</button>
+          <button data-value="positive" type="button">Positive</button>
+          <button data-value="negative" type="button">Negative</button>
+        </div>
         <div class="toolbar-divider"></div>
-        <div class="segmented" data-group="type"><button class="active" data-value="intraday" type="button">Intraday</button><button data-value="regular" type="button">Regular</button></div>
-        <div class="select-wrap"><select id="volatility" aria-label="Volatility"><option value="all">Volatility: All</option><option value="high">High volatility</option><option value="medium">Medium volatility</option><option value="low">Low volatility</option></select></div>
-          <div class="select-wrap"><select id="universe" aria-label="Universe"><option value="stocks">All stocks</option><option value="index">Index</option></select></div>
-        <div class="select-wrap" id="sectorWrap"><select id="sector" aria-label="Sector"><option value="all">All sectors</option></select></div>
+        <div class="segmented" data-group="type">
+          <button class="active" data-value="intraday" type="button">Intraday</button>
+          <button data-value="regular" type="button">Regular</button>
+        </div>
+        <div class="select-wrap">
+          <select id="volatility" aria-label="Volatility">
+            <option value="all">Volatility: All</option>
+            <option value="high">High volatility</option>
+            <option value="medium">Medium volatility</option>
+            <option value="low">Low volatility</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select id="universe" aria-label="Universe">
+            <option value="stocks">All stocks</option>
+            <option value="index">Index</option>
+          </select>
+        </div>
+        <div class="select-wrap" id="sectorWrap">
+          <select id="sector" aria-label="Sector"><option value="all">All sectors</option></select>
+        </div>
         <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Search symbol"></label>
-          <div class="mode-note" id="modeNote">All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.</div>
+        <div class="mode-note" id="modeNote">All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.</div>
       </section>
+
       <div id="momentumView">
-      <section class="summary-grid" aria-label="Scan summary">
-        <div class="summary-card"><div class="summary-label">Names tracked</div><div class="summary-value" id="trackedValue">—</div><div class="summary-foot">in current universe</div></div>
-        <div class="summary-card"><div class="summary-label">Positive momentum</div><div class="summary-value positive" id="positiveValue">—</div><div class="summary-foot up" id="positiveFoot">—</div></div>
-        <div class="summary-card"><div class="summary-label">Negative momentum</div><div class="summary-value negative" id="negativeValue">—</div><div class="summary-foot down" id="negativeFoot">—</div></div>
-        <div class="summary-card"><div class="summary-label">Peak volume ratio</div><div class="summary-value" id="peakValue">—</div><div class="summary-foot" id="peakFoot">vs. mid-term average</div></div>
-      </section>
-      <div class="content-grid">
-        <section class="panel" aria-label="Momentum rankings">
-          <div class="panel-head"><div><h2 class="panel-title">Momentum rankings</h2><p class="panel-caption" id="tableCaption">Positive and negative names rank separately • lowest rank is strongest • sideways moves rank lower</p></div><div class="view-toggle"><button class="active" data-view="table" type="button">Table</button><button data-view="compact" type="button">Compact</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th><button data-sort="symbol" type="button">Name</button></th><th><button data-sort="rank" type="button">Rank ↕</button></th><th><button data-sort="change" type="button">LTP %</button></th><th><button data-sort="volume" type="button">Volume %</button></th><th><button data-sort="ratio" type="button">Vol ratio</button></th><th><button data-sort="rfactor" type="button">RFactor</button></th><th>Buy-sell Δ</th><th><button data-sort="rsi" type="button">RSI</button></th><th><button data-sort="adx" type="button">ADX</button></th><th><button data-sort="ema" type="button">21 EMA %</button></th><th>5 candles</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="empty" hidden>No names match these filters.</div></div>
+        <section class="summary-grid" aria-label="Scan summary">
+          <div class="summary-card"><div class="summary-label">Names tracked</div><div class="summary-value" id="trackedValue">—</div><div class="summary-foot">in current universe</div></div>
+          <div class="summary-card"><div class="summary-label">Positive momentum</div><div class="summary-value positive" id="positiveValue">—</div><div class="summary-foot up" id="positiveFoot">—</div></div>
+          <div class="summary-card"><div class="summary-label">Negative momentum</div><div class="summary-value negative" id="negativeValue">—</div><div class="summary-foot down" id="negativeFoot">—</div></div>
+          <div class="summary-card"><div class="summary-label">Peak volume ratio</div><div class="summary-value" id="peakValue">—</div><div class="summary-foot" id="peakFoot">vs. mid-term average</div></div>
         </section>
-        <aside class="side">
-          <section class="panel"><h2 class="side-title">How to read this view</h2><div class="legend-row"><div class="legend-icon green">↓</div><div class="legend-copy"><strong>Momentum rank</strong><span>Lower is stronger. RFactor and recent directional continuation are included, so sideways names fall down the list.</span></div></div><div class="legend-row"><div class="legend-icon green">×</div><div class="legend-copy"><strong>Volume confirmation</strong><span>Recent directional 5-minute candles need meaningful volume, not just a morning volume spike.</span></div></div><div class="legend-row"><div class="legend-icon amber">Δ</div><div class="legend-copy"><strong>Buy-sell Δ</strong><span>Positive means bid depth is stronger; negative means ask depth is stronger. This is order-book pressure, not executed trade volume.</span></div></div><div class="legend-row"><div class="legend-icon amber">R</div><div class="legend-copy"><strong>RSI / ADX</strong><span>RSI above 70 or below 30 is stretched. ADX above 25 suggests a stronger trend.</span></div></div><div class="legend-row"><div class="legend-icon red">E</div><div class="legend-copy"><strong>21 EMA %</strong><span>A large gap can fade; a small gap can persist. Treat it as context only.</span></div></div></section>
-          <section class="panel status-card"><h2 class="side-title">Context, not a trade list</h2><p>Confirm any observation with the five-candle sparkline and a multi-timeframe chart. This screen is for research only and is not a trading signal.</p><div class="status-bar"><span id="updatedAt">Snapshot ready</span><strong id="feedBadge">Demo data</strong></div></section>
-        </aside>
+
+        <div class="content-grid">
+          <section class="panel leaders-side" aria-label="Top gainers and top losers">
+            <div class="leaders-grid">
+              <section class="leader-column gainers">
+                <div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers</h3><span id="gainersCount">0</span></div>
+                <div class="leader-list" id="gainersList"></div>
+              </section>
+              <section class="leader-column losers">
+                <div class="leader-column-head"><span class="leader-dot"></span><h3>Top Losers</h3><span id="losersCount">0</span></div>
+                <div class="leader-list" id="losersList"></div>
+              </section>
+            </div>
+
+            <div class="access-cta">
+              <a class="access-link" href="https://cosmofeed.com/vig/6a250fb87399a000136dec6b" target="_blank" rel="noopener noreferrer">
+                <span class="access-link-lead">Click here</span>
+                <span class="access-link-title">Join Our Private Telegram Group For Access</span>
+              </a>
+              <form class="access-form access-gate-form">
+                <input class="access-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Enter Your Registered Phone number" aria-label="Registered phone number" required>
+                <button class="access-submit" type="submit">Continue to Dashboard</button>
+              </form>
+              <div class="access-error" hidden></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="footer-note"><span class="shield">⬢</span><span>Illustrative scanner snapshot. Connect a market-data feed before treating values as live.</span></div>
       </div>
-      <div class="footer-note"><span class="shield">⬢</span><span>Illustrative scanner snapshot. Connect a market-data feed before treating values as live.</span></div>
-      </div>
+
       <section class="panel flow-panel view-hidden" id="sectorFlow" aria-label="Sector flow">
-         <div class="flow-head"><div><h2 class="flow-title">Sector flow</h2><p class="flow-caption">Average percentage change across the whole universe</p><span class="flow-scroll-hint">Auto-sized for your screen</span></div><span class="flow-sort">Sorted by %CHG mean ↓</span></div>
+        <div class="flow-head">
+          <div>
+            <h2 class="flow-title">Sector flow</h2>
+            <p class="flow-caption">Average percentage change across the whole universe</p>
+            <span class="flow-scroll-hint">Auto-sized for your screen</span>
+          </div>
+          <span class="flow-sort">Sorted by %CHG mean ↓</span>
+        </div>
+
+        <div class="access-cta">
+          <a class="access-link" href="https://cosmofeed.com/vig/6a250fb87399a000136dec6b" target="_blank" rel="noopener noreferrer">
+            <span class="access-link-lead">Click here</span>
+            <span class="access-link-title">Join Our Private Telegram Group For Access</span>
+          </a>
+          <form class="access-form access-gate-form">
+            <input class="access-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Enter Your Registered Phone number" aria-label="Registered phone number" required>
+            <button class="access-submit" type="submit">Continue to Dashboard</button>
+          </form>
+          <div class="access-error" hidden></div>
+        </div>
+
         <div class="flow-list" id="sectorFlowRows"></div>
       </section>
     </main>
   </div>
+
   <div id="toast" style="position:fixed;bottom:22px;left:50%;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:#111827;color:white;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;transition:.25s ease;box-shadow:0 8px 25px rgba(0,0,0,.2)"></div>
+
   <div class="sector-modal-backdrop" id="sectorModal" aria-hidden="true">
     <section class="sector-modal" role="dialog" aria-modal="true" aria-labelledby="sectorModalTitle">
-      <div class="sector-modal-head"><div><h2 class="sector-modal-title" id="sectorModalTitle">Sector constituents</h2><div class="sector-modal-sub">Sorted by RFactor, highest first</div></div><button class="sector-modal-close" id="sectorModalClose" type="button" aria-label="Close">×</button></div>
+      <div class="sector-modal-head">
+        <div>
+          <h2 class="sector-modal-title" id="sectorModalTitle">Sector constituents</h2>
+          <div class="sector-modal-sub">Sorted by RFactor, highest first</div>
+        </div>
+        <button class="sector-modal-close" id="sectorModalClose" type="button" aria-label="Close">×</button>
+      </div>
       <div class="sector-modal-columns"><span>Stock name</span><span>RFactor</span></div>
       <div class="sector-modal-rows" id="sectorModalRows"></div>
     </section>
   </div>
+
   <script>
     const SECTOR_DEFINITIONS = {
       METAL: ["ADANIENT", "APLAPOLLO", "BHARATFORG", "COALINDIA", "HINDALCO", "HINDZINC", "JSWSTEEL", "JINDALSTEL", "NMDC", "NATIONALUM", "SAIL", "TATASTEEL", "VEDL"],
@@ -427,10 +616,46 @@
     };
 
     const INDEX_DEFINITIONS = [
-      ["NIFTY 50", "NIFTY50"], ["BANK NIFTY", "BANKNIFTY"], ["NIFTY IT", "NIFTYIT"], ["NIFTY AUTO", "NIFTYAUTO"], ["NIFTY METAL", "NIFTYMETAL"], ["NIFTY PHARMA", "NIFTYPHARMA"], ["NIFTY ENERGY", "NIFTYENERGY"], ["NIFTY REALTY", "NIFTYREALTY"]
+      ["NIFTY 50", "NIFTY50"],
+      ["BANK NIFTY", "BANKNIFTY"],
+      ["NIFTY IT", "NIFTYIT"],
+      ["NIFTY AUTO", "NIFTYAUTO"],
+      ["NIFTY METAL", "NIFTYMETAL"],
+      ["NIFTY PHARMA", "NIFTYPHARMA"],
+      ["NIFTY ENERGY", "NIFTYENERGY"],
+      ["NIFTY REALTY", "NIFTYREALTY"]
     ];
-    const state = { direction: "all", type: "intraday", volatility: "all", universe: "stocks", sector: "all", search: "", sort: "rank", view: "table", seed: 1, liveRows: null, live: false, feedStatus: "offline", currentRows: [], sectorFlow: null, ticks: null, seedProgress: { done: 0, total: 0, errors: 0 }, fastMode: false, universeSize: 0, detailSymbols: 0 };
-    const els = { rows: document.getElementById("rows"), empty: document.getElementById("empty"), sector: document.getElementById("sector"), sectorWrap: document.getElementById("sectorWrap"), search: document.getElementById("search"), volatility: document.getElementById("volatility"), universe: document.getElementById("universe") };
+
+    // NOTE: removed allowedNumbers logic; backend validates the allowlist.
+    const state = {
+      direction: "all",
+      type: "intraday",
+      volatility: "all",
+      universe: "stocks",
+      sector: "all",
+      search: "",
+      seed: 1,
+      liveRows: null,
+      live: false,
+      feedStatus: "offline",
+      currentRows: [],
+      sectorFlow: null,
+      ticks: null,
+      seedProgress: { done: 0, total: 0, errors: 0 },
+      fastMode: false,
+      universeSize: 0,
+      detailSymbols: 0,
+      accessGranted: false,
+      accessNumber: ""
+    };
+
+    const els = {
+      sector: document.getElementById("sector"),
+      sectorWrap: document.getElementById("sectorWrap"),
+      search: document.getElementById("search"),
+      volatility: document.getElementById("volatility"),
+      universe: document.getElementById("universe")
+    };
 
     Object.keys(SECTOR_DEFINITIONS).forEach(sector => {
       const option = document.createElement("option");
@@ -444,7 +669,9 @@
       for (let i = 0; i < value.length; i++) total = Math.imul(total ^ value.charCodeAt(i), 16777619);
       return Math.abs(total >>> 0);
     }
+
     function unit(value, salt = "") { return (hash(`${value}:${salt}:${state.seed}`) % 1000) / 1000; }
+
     function makeSpark(symbol, direction) {
       const points = Array.from({ length: 5 }, (_, i) => 22 - i * 2 + (unit(symbol, `spark${i}`) - .5) * 10 + direction * i * 2.3);
       const min = Math.min(...points), max = Math.max(...points);
@@ -452,56 +679,231 @@
       const color = direction > 0 ? "#0d9b73" : "#d44e57";
       return `<svg class="spark" viewBox="0 0 72 26" aria-label="Five candle ${direction > 0 ? "upward" : "downward"} trend"><polygon class="area" fill="${color}" points="0,25 ${coords} 72,25"></polygon><polyline stroke="${color}" points="${coords}"></polyline></svg>`;
     }
+
     function makeRow(symbol, sector, index = 0, isIndex = false) {
       const direction = unit(symbol, "direction") > .46 ? 1 : -1;
       const participation = .78 + unit(symbol, "ratio") * 1.7;
       const trend = 15 + unit(symbol, "adx") * 24;
       const change = direction * (.35 + unit(symbol, "change") * 4.1);
+      const ltp = 82 + unit(symbol, "ltp") * 2918;
       const baseRsi = 48 + direction * (8 + unit(symbol, "rsi") * 25);
       const rsi = Math.max(18, Math.min(84, state.type === "regular" ? baseRsi + (unit(symbol, "daily") - .5) * 7 : baseRsi));
       const adx = Math.max(12, Math.min(42, state.type === "regular" ? trend + 2 : trend));
-       const ema = direction * (.15 + unit(symbol, "ema") * 3.8);
-       const recentChange = direction * (.15 + unit(symbol, "recent") * 1.15);
-       const freshness = Math.max(.25, Math.min(1, .25 + Math.max(0, recentChange * direction) / .8));
-       const effectiveParticipation = Math.min(participation, 1) + Math.max(participation - 1, 0) * freshness;
-       const staleTrend = Math.abs(change) * .4 + effectiveParticipation * 1.6 + Math.max(0, adx - 18) / 12 + Math.abs(ema) * .2 + Math.abs(rsi - 50) / 24 * .35;
-       const trendQuality = .55 + unit(symbol, "continuity") * .45;
-       const volumeQuality = .55 + unit(symbol, "volumeConfirm") * .45;
-       const buySellDelta = direction * (.15 + unit(symbol, "flow") * .7);
-       const flowQuality = Math.max(.7, Math.min(1.2, 1 + .2 * direction * buySellDelta));
-       const score = (Math.max(0, recentChange * direction) * 2.3 + staleTrend * (.35 + .65 * freshness)) * trendQuality * volumeQuality * flowQuality;
+      const ema = direction * (.15 + unit(symbol, "ema") * 3.8);
+      const recentChange = direction * (.15 + unit(symbol, "recent") * 1.15);
+      const freshness = Math.max(.25, Math.min(1, .25 + Math.max(0, recentChange * direction) / .8));
+      const effectiveParticipation = Math.min(participation, 1) + Math.max(participation - 1, 0) * freshness;
+      const staleTrend = Math.abs(change) * .4 + effectiveParticipation * 1.6 + Math.max(0, adx - 18) / 12 + Math.abs(ema) * .2 + Math.abs(rsi - 50) / 24 * .35;
+      const trendQuality = .55 + unit(symbol, "continuity") * .45;
+      const volumeQuality = .55 + unit(symbol, "volumeConfirm") * .45;
+      const buySellDelta = direction * (.15 + unit(symbol, "flow") * .7);
+      const flowQuality = Math.max(.7, Math.min(1.2, 1 + .2 * direction * buySellDelta));
+      const score = (Math.max(0, recentChange * direction) * 2.3 + staleTrend * (.35 + .65 * freshness)) * trendQuality * volumeQuality * flowQuality;
       const volatility = Math.abs(change) > 3.1 ? "high" : Math.abs(change) > 1.6 ? "medium" : "low";
-       return { symbol, display: isIndex ? symbol : symbol, sector, direction, change, volume: (participation - 1) * 100, ratio: participation, buySellDelta, rsi, adx, ema, score, rfactor: score, volatility, rank: index, spark: makeSpark(symbol, direction), isIndex };
+      return { symbol, display: isIndex ? symbol : symbol, ltp, sector, direction, change, volume: (participation - 1) * 100, ratio: participation, buySellDelta, rsi, adx, ema, score, rfactor: score, volatility, rank: index, spark: makeSpark(symbol, direction), isIndex };
     }
+
     function buildRows() {
-      if (state.universe === "index") return INDEX_DEFINITIONS.map(([name, key], i) => makeRow(name, "INDEX", i, true));
+      if (state.universe === "index") return INDEX_DEFINITIONS.map(([name], i) => makeRow(name, "INDEX", i, true));
       const membership = new Map();
       Object.entries(SECTOR_DEFINITIONS).forEach(([sector, symbols]) => symbols.forEach(symbol => { if (!membership.has(symbol)) membership.set(symbol, sector); }));
       const symbols = state.sector === "all" ? [...membership.keys()] : (SECTOR_DEFINITIONS[state.sector] || []);
       return symbols.map((symbol, i) => makeRow(symbol, membership.get(symbol) || state.sector, i));
     }
+
     function rankRows(rows) {
-      const positive = rows.filter(row => row.direction >= 0).sort((a, b) => b.score - a.score);
-      const negative = rows.filter(row => row.direction < 0).sort((a, b) => b.score - a.score);
-      [positive, negative].forEach(group => group.forEach((row, i) => { row.rank = i + 1; row.rfactor = Number(row.rfactor ?? row.score ?? 0); }));
-      return [...positive, ...negative];
+      const ranked = [...rows].sort((a, b) => (b.score - a.score) || (Math.abs(b.change) - Math.abs(a.change)) || a.symbol.localeCompare(b.symbol));
+      ranked.forEach((row, i) => { row.rank = i + 1; row.rfactor = Number(row.rfactor ?? row.score ?? 0); });
+      return ranked;
     }
+
     function formatNumber(number, digits = 1) { return Number(number).toFixed(digits); }
+    function escapeHtml(value) { return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
+    function normalizePhone(value) { return String(value ?? "").replace(/\D/g, "").replace(/^91(?=\d{10}$)/, ""); }
+
+    function accessStorageGet(key) {
+      try { return localStorage.getItem(key) || sessionStorage.getItem(key); } catch (error) { return sessionStorage.getItem(key); }
+    }
+    function accessStorageSet(key, value) {
+      try { localStorage.setItem(key, value); } catch (error) {}
+      sessionStorage.setItem(key, value);
+    }
+    function accessStorageRemove(key) {
+      try { localStorage.removeItem(key); } catch (error) {}
+      sessionStorage.removeItem(key);
+    }
+
+    function accessSessionId() {
+      let sessionId = accessStorageGet("scannerAccessSessionId");
+      if (!sessionId) {
+        sessionId = window.crypto?.randomUUID?.() || `scanner-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        accessStorageSet("scannerAccessSessionId", sessionId);
+      }
+      return sessionId;
+    }
+
+    async function accessRequest(path, payload) {
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        cache: "no-store"
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(body.error || `HTTP ${response.status}`);
+        error.code = body.error || `http_${response.status}`;
+        throw error;
+      }
+      return body;
+    }
+
+    function setAccessGranted(granted, number = "") {
+      state.accessGranted = granted;
+      state.accessNumber = granted ? normalizePhone(number) : "";
+      document.body.classList.toggle("access-granted", granted);
+    }
+
+    // UPDATED: no allowlist fetch on client; backend is source of truth.
+    function accessErrorMessage(error) {
+      if (error?.code === "already_logged_in") return "This phone number is already logged in. Log out first.";
+      if (error?.code === "not_allowed") return "This phone number is not approved for dashboard access.";
+      if (error?.code === "access_required") return "Please submit your registered phone number first.";
+      return "Login service unavailable. Please try again.";
+    }
+
+    // UPDATED: Poll /api/scan ONLY after access granted (prevents 403 spam).
+    let scanTimer = null;
+    function startScanPolling() {
+      if (scanTimer) return;
+      loadLiveData(true);
+      scanTimer = setInterval(() => loadLiveData(false), 5000);
+    }
+    function stopScanPolling() {
+      if (!scanTimer) return;
+      clearInterval(scanTimer);
+      scanTimer = null;
+    }
+
+    // UPDATED: initializeAccess() no longer fetches numbers.txt
+    async function initializeAccess() {
+      const forms = [...document.querySelectorAll(".access-gate-form")];
+
+      const saved = normalizePhone(accessStorageGet("scannerAccessNumber"));
+      if (saved) {
+        try {
+          await accessRequest("/api/access/login", { phone: saved, session_id: accessSessionId() });
+          setAccessGranted(true, saved);
+          startScanPolling();
+          return;
+        } catch (error) {
+          accessStorageRemove("scannerAccessNumber");
+          setAccessGranted(false);
+        }
+      }
+
+      forms.forEach(form => form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const input = form.querySelector(".access-phone");
+        const submit = form.querySelector(".access-submit");
+        const errorBox = form.parentElement.querySelector(".access-error");
+
+        const number = normalizePhone(input.value);
+
+        // Basic validation
+        if (number.length !== 10) {
+          errorBox.textContent = "Please enter a valid 10-digit phone number.";
+          errorBox.hidden = false;
+          input.focus();
+          return;
+        }
+
+        input.disabled = true;
+        submit.disabled = true;
+        errorBox.hidden = true;
+
+        try {
+          await accessRequest("/api/access/login", { phone: number, session_id: accessSessionId() });
+          accessStorageSet("scannerAccessNumber", number);
+          setAccessGranted(true, number);
+          startScanPolling();
+          showToast("Access granted");
+        } catch (loginError) {
+          errorBox.textContent = accessErrorMessage(loginError);
+          errorBox.hidden = false;
+        } finally {
+          input.disabled = false;
+          submit.disabled = false;
+        }
+      }));
+    }
+
+    function renderMovers(allRows) {
+      const gainers = allRows.filter(row => Number(row.change) > 0).sort((a, b) => b.change - a.change).slice(0, 40);
+      const losers = allRows.filter(row => Number(row.change) < 0).sort((a, b) => a.change - b.change).slice(0, 40);
+      const change = value => Number.isFinite(Number(value)) ? `${signed(Number(value), 1)}%` : "—";
+
+      const renderList = (rows, tone) => `<table class="leader-table">
+        <colgroup><col style="width:31%"><col style="width:12%"><col style="width:19%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
+        <thead><tr><th>Name</th><th>Rank</th><th>LTP %</th><th>Vol ratio</th><th>C RSI</th><th>ADX</th></tr></thead>
+        <tbody>
+          ${rows.map((row, index) => {
+            const ratioClass = Number(row.ratio) >= 1.35 ? "ratio-high" : Number(row.ratio) < 1 ? "ratio-low" : "";
+            const rsiClass = Number(row.rsi) >= 60 ? "rsi-high" : Number(row.rsi) <= 40 ? "rsi-low" : "";
+            const adxClass = Number(row.adx) > 25 ? "adx-high" : Number(row.adx) < 20 ? "adx-low" : "adx-mid";
+            const chip = row.symbol.replace(/[^A-Z]/g, "").slice(0, 2) || "•";
+            const sector = String(row.sector || "").replaceAll("_", " ");
+            return `<tr>
+              <td>
+                <div class="leader-stock">
+                  <div class="leader-chip ${tone}">${escapeHtml(chip)}</div>
+                  <div class="leader-copy">
+                    <div class="leader-name" title="${escapeHtml(row.display)}">${escapeHtml(row.display)}</div>
+                    <div class="leader-sector">${escapeHtml(sector)}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="leader-rank">${index + 1}</td>
+              <td class="leader-ltp ${tone}">${change(row.change)}</td>
+              <td class="leader-ratio ${ratioClass}">${formatNumber(row.ratio, 2)}×</td>
+              <td class="leader-rsi ${rsiClass}">${formatNumber(row.rsi, 1)}</td>
+              <td><span class="leader-adx ${adxClass}">${formatNumber(row.adx, 1)}</span></td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+
+      document.getElementById("gainersList").innerHTML = renderList(gainers, "positive");
+      document.getElementById("losersList").innerHTML = renderList(losers, "negative");
+      document.getElementById("gainersCount").textContent = gainers.length;
+      document.getElementById("losersCount").textContent = losers.length;
+    }
+
     function getFilteredRows(allRows) {
       return allRows.filter(row => {
-        const directionMatch = state.direction === "all" || (state.direction === "positive" && row.direction > 0) || (state.direction === "negative" && row.direction < 0);
+        const directionMatch =
+          state.direction === "all" ||
+          (state.direction === "positive" && row.direction > 0) ||
+          (state.direction === "negative" && row.direction < 0);
         const volatilityMatch = state.volatility === "all" || row.volatility === state.volatility;
-        const searchMatch = !state.search || row.symbol.toLowerCase().includes(state.search.toLowerCase()) || row.sector.toLowerCase().includes(state.search.toLowerCase());
+        const searchMatch =
+          !state.search ||
+          row.symbol.toLowerCase().includes(state.search.toLowerCase()) ||
+          row.sector.toLowerCase().includes(state.search.toLowerCase());
         return directionMatch && volatilityMatch && searchMatch;
       });
     }
+
     function compactSectorName(name) {
       const labels = { METAL: "MET", REALTY: "RE", ENERGY: "ENE", AUTO: "AUTO", IT: "IT", PHARMA: "PHA", FMCG: "FMCG", CEMENT: "CEM", FINSERVICE: "FIN", BANK: "BANK", PSUBANK: "PSU", DURABLES: "DUR", LOGISTICS: "LOG", DEFENCE: "DEF", NIFTY_50: "N50" };
       return labels[name] || name.replaceAll("_", " ").slice(0, 5);
     }
+
     function renderSectorFlow(allRows) {
       const container = document.getElementById("sectorFlowRows");
       let items;
+
       if (state.universe !== "index" && Array.isArray(state.sectorFlow) && state.sectorFlow.length) {
         items = state.sector === "all" ? state.sectorFlow : state.sectorFlow.filter(item => item.name === state.sector);
       } else {
@@ -514,21 +916,46 @@
           Object.entries(definitions).forEach(([sector, symbols]) => {
             const rows = symbols.map(symbol => bySymbol.get(symbol)).filter(Boolean);
             if (!rows.length) return;
-            grouped.set(sector, { rows, sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0), count: rows.length, up: rows.filter(row => row.change >= 0).length, down: rows.filter(row => row.change < 0).length });
+            grouped.set(sector, {
+              rows,
+              sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0),
+              count: rows.length,
+              up: rows.filter(row => row.change >= 0).length,
+              down: rows.filter(row => row.change < 0).length
+            });
           });
         }
-        items = [...grouped.entries()].map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) })).sort((a, b) => b.mean - a.mean);
+        items = [...grouped.entries()]
+          .map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) }))
+          .sort((a, b) => b.mean - a.mean);
       }
-      if (!items.length) { container.innerHTML = '<div class="flow-empty">Sector flow is waiting for data.</div>'; return; }
+
+      if (!items.length) {
+        container.innerHTML = '<div class="flow-empty">Sector flow is waiting for data.</div>';
+        return;
+      }
+
       const positiveMax = Math.max(...items.filter(item => item.mean > 0).map(item => item.mean), .01);
       const negativeMax = Math.max(...items.filter(item => item.mean < 0).map(item => Math.abs(item.mean)), .01);
+
       container.innerHTML = items.map(item => {
         const positive = item.mean >= 0;
         const height = Math.max(8, Math.abs(item.mean) / (positive ? positiveMax : negativeMax) * (positive ? 160 : 70));
-        return `<div class="flow-row" data-sector="${item.name}"><div class="flow-bar-zone"><div class="flow-fill ${positive ? "positive" : "negative"}" style="height:${height.toFixed(1)}px"></div></div><div class="flow-name" title="${item.name.replaceAll("_", " ")}"><span class="flow-name-full">${item.name.replaceAll("_", " ")}</span><span class="flow-name-short">${compactSectorName(item.name)}</span></div><div class="flow-value ${positive ? "positive" : "negative"}">${signed(item.mean)}%</div></div>`;
+        return `<div class="flow-row" data-sector="${item.name}">
+          <div class="flow-bar-zone">
+            <div class="flow-fill ${positive ? "positive" : "negative"}" style="height:${height.toFixed(1)}px"></div>
+          </div>
+          <div class="flow-name" title="${item.name.replaceAll("_", " ")}">
+            <span class="flow-name-full">${item.name.replaceAll("_", " ")}</span>
+            <span class="flow-name-short">${compactSectorName(item.name)}</span>
+          </div>
+          <div class="flow-value ${positive ? "positive" : "negative"}">${signed(item.mean)}%</div>
+        </div>`;
       }).join("");
+
       container.querySelectorAll(".flow-row").forEach(row => row.addEventListener("click", () => openSectorModal(row.dataset.sector)));
     }
+
     function openSectorModal(sector) {
       let rows;
       if (state.universe === "index") {
@@ -540,44 +967,44 @@
       rows.sort((a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0));
       const modal = document.getElementById("sectorModal");
       document.getElementById("sectorModalTitle").textContent = sector.replaceAll("_", " ");
-      document.getElementById("sectorModalRows").innerHTML = rows.length ? rows.map(row => `<div class="sector-stock-row"><div class="sector-stock-name"><span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${row.display}</div><div class="sector-stock-rfactor">${formatNumber(Number(row.rfactor ?? 0), 2)}</div></div>`).join("") : '<div class="sector-modal-empty">No constituent data is available yet.</div>';
+      document.getElementById("sectorModalRows").innerHTML = rows.length
+        ? rows.map(row => `<div class="sector-stock-row"><div class="sector-stock-name"><span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${row.display}</div><div class="sector-stock-rfactor">${formatNumber(Number(row.rfactor ?? 0), 2)}</div></div>`).join("")
+        : '<div class="sector-modal-empty">No constituent data is available yet.</div>';
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
     }
+
     function closeSectorModal() {
       const modal = document.getElementById("sectorModal");
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
     }
+
     function signed(value, digits = 1) { return `${value >= 0 ? "+" : ""}${formatNumber(value, digits)}`; }
+
     function setView(view) {
       const flow = view === "flow";
       document.getElementById("momentumView").classList.toggle("view-hidden", flow);
       document.getElementById("sectorFlow").classList.toggle("view-hidden", !flow);
       document.getElementById("pageTitle").textContent = flow ? "Sector flow" : "Intraday momentum scanner";
-      document.getElementById("pageSubhead").textContent = flow ? "Compare average percentage change across sectors. Green leads; red lags." : "Rank the names moving now by participation, trend strength, and momentum. Start with the lowest rank, then validate on a chart.";
-      document.querySelectorAll(".nav button").forEach(item => item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : item.textContent.includes("Momentum")));
+      document.getElementById("pageSubhead").textContent = flow
+        ? "Compare average percentage change across sectors. Green leads; red lags."
+        : "Review the strongest movers now by participation, trend strength, and momentum.";
+      document.querySelectorAll(".nav button").forEach(item =>
+        item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : item.textContent.toLowerCase().includes("momentum"))
+      );
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+
     function render() {
       const allRows = state.liveRows ? state.liveRows : rankRows(buildRows());
       state.currentRows = allRows;
+
       const filtered = getFilteredRows(allRows);
-      const sorters = {
-        rank: (a, b) => a.rank - b.rank,
-        symbol: (a, b) => a.symbol.localeCompare(b.symbol),
-        change: (a, b) => b.change - a.change,
-        volume: (a, b) => b.volume - a.volume,
-         ratio: (a, b) => b.ratio - a.ratio,
-         rfactor: (a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0),
-        rsi: (a, b) => b.rsi - a.rsi,
-        adx: (a, b) => b.adx - a.adx,
-        ema: (a, b) => Math.abs(b.ema) - Math.abs(a.ema)
-      };
-      filtered.sort(sorters[state.sort]);
       const positive = allRows.filter(row => row.direction > 0).length;
       const negative = allRows.length - positive;
       const peak = Math.max(...allRows.map(row => row.ratio), 0);
+
       document.getElementById("trackedValue").textContent = allRows.length;
       document.getElementById("positiveValue").textContent = positive;
       document.getElementById("negativeValue").textContent = negative;
@@ -585,52 +1012,92 @@
       document.getElementById("positiveFoot").textContent = `${Math.round(positive / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("negativeFoot").textContent = `${Math.round(negative / Math.max(allRows.length, 1) * 100)}% of universe`;
       document.getElementById("peakFoot").textContent = state.type === "intraday" ? "vs. 20-session average" : "vs. 60-session average";
-        document.getElementById("tableCaption").textContent = `Positive and negative names rank separately • lowest rank is strongest • sideways moves rank lower • RSI and ADX are ${state.type === "intraday" ? "5-min" : "daily"}`;
-      const feedLabels = { live: "Live", snapshot: "Previous session", offline: "Offline" };
+
+      const feedLabels = { live: "Live", snapshot: "Previous session", offline: "Offline", seeding: "Seeding" };
       const seedLabel = `Seeding (${Number(state.seedProgress.done || 0)}/${Number(state.seedProgress.total || 0)})`;
-      const feedLabel = state.feedStatus === "seeding" ? seedLabel : feedLabels[state.feedStatus] || "Offline";
+      const feedLabel = state.feedStatus === "seeding" ? seedLabel : (feedLabels[state.feedStatus] || "Offline");
+
       const feedChip = document.getElementById("feedChip");
       feedChip.className = `feed-chip ${state.feedStatus}`;
       document.getElementById("feedChipText").textContent = feedLabel;
       document.getElementById("ticksChip").textContent = state.ticks === null ? "Ticks --" : `Ticks ${Number(state.ticks).toLocaleString()}`;
-      document.getElementById("feedStatusText").textContent = state.feedStatus === "live" ? `Live / ${state.detailSymbols || state.universeSize || "all"} detailed / ${state.universeSize || "whole"} watched` : state.feedStatus === "snapshot" ? "Previous session / NSE universe" : state.feedStatus === "seeding" ? `${seedLabel} / whole universe watched` : "Market pulse / NSE universe · offline";
-      document.getElementById("modeNote").textContent = state.fastMode ? "Fast mode watches the whole universe and calculates detailed indicators for the strongest 25." : "All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.";
-      document.getElementById("feedBadge").textContent = state.feedStatus === "live" ? "Live feed" : state.feedStatus === "snapshot" ? "Previous session" : state.feedStatus === "seeding" ? seedLabel : "Offline";
+
+      document.getElementById("feedStatusText").textContent =
+        state.feedStatus === "live"
+          ? `Live / ${state.detailSymbols || state.universeSize || "all"} detailed / ${state.universeSize || "whole"} watched`
+          : state.feedStatus === "snapshot"
+            ? "Previous session / NSE universe"
+            : state.feedStatus === "seeding"
+              ? `${seedLabel} / whole universe watched`
+              : "Market pulse / NSE universe · offline";
+
+      document.getElementById("modeNote").textContent = state.fastMode
+        ? "Fast mode watches the whole universe and calculates detailed indicators for the strongest 25."
+        : "All configured stocks receive detailed indicators; Sector flow uses the whole quote universe.";
+
       renderSectorFlow(allRows);
-      document.querySelector("table").classList.toggle("compact", state.view === "compact");
-      els.empty.hidden = filtered.length !== 0;
-      els.rows.innerHTML = filtered.map(row => {
-        const tone = row.direction > 0 ? "green" : "red";
-        const adxClass = row.adx > 25 ? "high" : row.adx < 20 ? "low" : "mid";
-        const chip = row.isIndex ? "⌁" : row.symbol.replace(/[^A-Z]/g, "").slice(0, 2);
-         const flow = row.buySellDelta == null ? null : Number(row.buySellDelta);
-         return `<tr>
-           <td><div class="stock-cell"><div class="stock-chip ${tone}">${chip || "•"}</div><div><div class="stock-name">${row.display}</div><div class="stock-sector">${row.sector.replaceAll("_", " ")}</div></div></div></td>
-           <td class="rank">${row.rank}</td><td class="trend ${row.direction > 0 ? "up" : "down"}">${signed(row.change)}%</td><td class="trend ${row.volume >= 0 ? "up" : "down"}">${signed(row.volume)}%</td>
-           <td><span class="ratio ${row.ratio >= 1.35 ? "hot" : row.ratio < 1 ? "cool" : ""}">${formatNumber(row.ratio, 2)}×</span></td><td>${formatNumber(row.rfactor, 2)}</td><td class="trend ${flow == null ? "" : flow >= 0 ? "up" : "down"}">${flow == null ? "—" : signed(flow, 2)}</td><td>${formatNumber(row.rsi)}</td><td><span class="metric-pill ${adxClass}">${formatNumber(row.adx)}</span></td><td class="trend ${row.ema >= 0 ? "up" : "down"}">${signed(row.ema)}%</td><td>${row.spark}</td>
-        </tr>`;
-      }).join("");
+      renderMovers(filtered);
     }
+
     function showToast(message) {
       const toast = document.getElementById("toast");
       toast.textContent = message;
       toast.style.opacity = "1";
       toast.style.transform = "translate(-50%, 0)";
       clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => { toast.style.opacity = "0"; toast.style.transform = "translate(-50%, 16px)"; }, 2200);
+      showToast.timer = setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translate(-50%, 16px)";
+      }, 2200);
     }
+
+    // UPDATED: require accessGranted; handle session expiry (403) cleanly.
     async function loadLiveData(manual = false) {
-      const params = new URLSearchParams({ type: state.type, universe: state.universe, sector: state.sector, _: Date.now() });
+      if (!state.accessGranted) {
+        if (manual) showToast("Login required for live feed");
+        return;
+      }
+
+      const params = new URLSearchParams({
+        type: state.type,
+        universe: state.universe,
+        sector: state.sector,
+        limit: "250",
+        _: Date.now()
+      });
+
+      params.set("access_phone", state.accessNumber);
+      params.set("access_session_id", accessSessionId());
+
       try {
         const response = await fetch(`/api/scan?${params.toString()}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        if (!response.ok) {
+          if (response.status === 403) {
+            // Session expired/invalid -> force logout client-side
+            stopScanPolling();
+            accessStorageRemove("scannerAccessNumber");
+            setAccessGranted(false);
+            state.liveRows = null;
+            state.live = false;
+            state.sectorFlow = null;
+            state.feedStatus = "offline";
+            render();
+            showToast("Session expired. Please log in again.");
+            return;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const payload = await response.json();
         if (!Array.isArray(payload.rows)) throw new Error("Invalid scan payload");
+
         if (payload.seed) state.seedProgress = payload.seed;
         if (Array.isArray(payload.sector_flow)) state.sectorFlow = payload.sector_flow;
         if (typeof payload.fast_mode === "boolean") state.fastMode = payload.fast_mode;
         if (Number.isFinite(Number(payload.universe_size))) state.universeSize = Number(payload.universe_size);
         if (Number.isFinite(Number(payload.detail_symbols))) state.detailSymbols = Number(payload.detail_symbols);
+
         if (!payload.rows.length && payload.live !== true) {
           state.liveRows = null;
           state.live = false;
@@ -640,13 +1107,14 @@
           if (manual) showToast(payload.status === "seeding" ? "History is still loading" : previousSession ? "Showing previous session data" : "Live feed unavailable; demo snapshot shown");
           return;
         }
+
         state.liveRows = payload.rows;
         state.live = payload.live === true;
         state.ticks = Number.isFinite(Number(payload.ticks)) ? Number(payload.ticks) : state.ticks;
+
         const previousSession = payload.status === "previous_session" || payload.status === "market_closed";
         state.feedStatus = payload.status === "seeding" ? "seeding" : state.live ? "live" : previousSession ? "snapshot" : "offline";
-        const stamp = payload.updated_at ? `${state.feedStatus === "snapshot" ? "Previous session" : "Live snapshot"} • ${payload.updated_at}` : (state.live ? "Live snapshot" : "Waiting for feed");
-        document.getElementById("updatedAt").textContent = stamp;
+
         render();
         if (manual) showToast(state.live ? "Live scan refreshed" : "Feed reachable; waiting for ticks");
       } catch (error) {
@@ -658,60 +1126,82 @@
         if (manual) showToast("Live feed unavailable; demo snapshot shown");
       }
     }
+
     document.querySelectorAll(".segmented").forEach(group => group.addEventListener("click", event => {
       const button = event.target.closest("button");
       if (!button) return;
       const name = group.dataset.group;
       state[name] = button.dataset.value;
       group.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
-       render();
-       loadLiveData();
+      render();
+      if (state.accessGranted) loadLiveData();
     }));
-    [els.volatility, els.sector].forEach(select => select.addEventListener("change", event => { state[select.id] = event.target.value; render(); loadLiveData(); }));
+
+    [els.volatility, els.sector].forEach(select =>
+      select.addEventListener("change", event => {
+        state[select.id] = event.target.value;
+        render();
+        if (state.accessGranted) loadLiveData();
+      })
+    );
+
     els.universe.addEventListener("change", event => {
       state.universe = event.target.value;
       els.sectorWrap.style.display = state.universe === "index" ? "none" : "block";
       if (state.universe === "index") { state.sector = "all"; els.sector.value = "all"; }
       showToast(state.universe === "index" ? "Index universe selected" : "Stock universe selected");
       render();
-      loadLiveData();
+      if (state.accessGranted) loadLiveData();
     });
+
     els.search.addEventListener("input", event => { state.search = event.target.value.trim(); render(); });
-    document.querySelectorAll("th button[data-sort]").forEach(button => button.addEventListener("click", () => { state.sort = button.dataset.sort; render(); }));
-    document.querySelectorAll(".view-toggle button").forEach(button => button.addEventListener("click", () => {
-      state.view = button.dataset.view;
-      document.querySelectorAll(".view-toggle button").forEach(item => item.classList.toggle("active", item === button));
-      render();
-    }));
+
     document.getElementById("refreshBtn").addEventListener("click", () => {
       state.seed += 1;
-      const now = new Date();
-      document.getElementById("updatedAt").textContent = `Sample snapshot • ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
       showToast("Refreshing scanner");
       render();
-      loadLiveData(true);
+      if (state.accessGranted) loadLiveData(true);
     });
-    document.getElementById("helpBtn").addEventListener("click", () => {
-      document.querySelector(".side .panel").scrollIntoView({ behavior: "smooth", block: "center" });
-      showToast("Start with rank, then confirm the chart");
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (!state.accessGranted) return;
+      try {
+        await accessRequest("/api/access/logout", { phone: state.accessNumber, session_id: accessSessionId() });
+      } catch (error) {
+        showToast("Could not log out; please try again");
+        return;
+      }
+
+      stopScanPolling();
+      accessStorageRemove("scannerAccessNumber");
+      setAccessGranted(false);
+      state.liveRows = null;
+      state.live = false;
+      state.sectorFlow = null;
+      state.feedStatus = "offline";
+      render();
+      showToast("Logged out");
     });
+
     document.getElementById("sectorModalClose").addEventListener("click", closeSectorModal);
     document.getElementById("sectorModal").addEventListener("click", event => { if (event.target.id === "sectorModal") closeSectorModal(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeSectorModal(); });
+
     document.querySelectorAll(".nav button").forEach(button => button.addEventListener("click", () => {
       if (button.dataset.scroll) {
         setView("flow");
         showToast("Sector flow sorted by mean % change");
-      } else if (button.textContent.includes("Momentum")) {
+      } else if (button.textContent.toLowerCase().includes("momentum")) {
         setView("momentum");
         showToast("Momentum scanner selected");
+      } else {
+        showToast(`${button.textContent.trim()} is a demo view`);
       }
-      else showToast(`${button.textContent.trim()} is a demo view`);
     }));
-    document.getElementById("updatedAt").textContent = `Sample snapshot • ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    render();
-    loadLiveData();
-    setInterval(() => loadLiveData(), 5000);
+
+    // Boot
+    render();           // demo render immediately
+    initializeAccess(); // will start polling only after successful login
   </script>
 </body>
 </html>

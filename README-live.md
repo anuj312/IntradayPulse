@@ -26,22 +26,27 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Uses KiteTicker full-mode ticks for current price, volume, and five-point sparklines.
 - Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, RFactor, volatility bucket, and momentum rank. RFactor matches the supplied `dashboard_clean.py` formula: 20-session volume/range/move baselines, 0.55/0.30/0.15 weighting, price-position freshness, narrow-range penalty, and logarithmic scaling. RFactor and directional continuation directly affect rank, so an early spike loses rank when the stock goes sideways instead of continuing.
 - Calculates and exposes a live RFactor value; click any Sector flow bar to see its stocks sorted by RFactor.
-- Ranks positive movers and negative movers in separate groups, each starting at Rank 1, using the composite momentum score. This follows the supplied dashboard’s leaders/losers behavior instead of mixing upside and downside names into one rank sequence.
+- Ranks positive and negative movers together by composite momentum score, keeping one continuous rank sequence so green and red names appear together.
 - Shows the cumulative KiteTicker tick count beside the feed status.
 - Serves `/api/scan` for the page and `/api/health` for feed status.
+- Reads the approved phone-number allowlist from `numbers.txt`; only listed numbers can clear the dashboard access gate.
+- Serves `/api/access/login` and `/api/access/logout`; each approved number can hold one active session, and a second session is rejected until the first logs out.
+- Requires an active access session for `/api/scan`, so live scanner data is not returned to an unauthenticated page.
 - Starts market-data initialization in the background under Uvicorn, so the dashboard opens while history is still seeding.
 - Recomputes detailed rows and whole-universe Sector flow in a background cache; `/api/scan` only reads that cache, so browser polling does not rerun indicators or RFactor calculations.
 - Detects the next calendar session, clears prior-session live ticks, and reseeds fresh Kite history automatically without requiring a Render restart; the previous-session cache stays visible while this happens.
 - Outside market hours, the page labels loaded data as `Previous session` until the next session begins.
-- If the service restarts off-hours, the intraday view rebuilds each stock from the latest completed session’s full OHLC and volume, so ranking still reflects that session’s momentum.
+- If the service restarts off-hours, the intraday view loads the persisted latest completed-session OHLC and volume cache, so ranking still reflects that session’s momentum without a redundant full seed.
 - A weekday is not treated as a new trading session until current-session candles or ticks actually exist, so weekends and exchange holidays continue showing the latest completed session.
 - When current-session data is absent, continuation, volume confirmation, and volume ratio all use the latest available trading session rather than the calendar date.
 - The pre-market seed starts at `07:30 IST` by default (`PREMARKET_SEED_TIME` can change it), so current history is normally ready before the `09:15 IST` open.
 
-Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
-`SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 3 seconds).
+Full-universe mode is enabled by default. Set `FAST_MODE=true` to optionally watch all stocks with lightweight quote ticks while limiting detailed history/order-book work to `FAST_SYMBOL_LIMIT` stocks. Fast mode intentionally refreshes newly selected symbols as the rotation changes; keep `FAST_MODE=false` to avoid that behavior. `FAST_SELECTION_WAIT_SEC` controls how long startup waits for live quotes before selecting the Fast mode list, and `FAST_RESELECT_SEC` controls how often that list rotates (default: 300 seconds).
+`SCAN_COMPUTE_EVERY_SEC` controls the background cache refresh interval (default: 8 seconds).
 
-The initial historical seed is deliberately paced and can take a few minutes for the full universe. Until enough history is available, the page remains in demo mode. Kite access tokens normally expire daily, so provide a fresh token before starting the server.
+The service keeps a best-effort local history cache when `SCANNER_DATA_DIR` is available, but the default Render filesystem is ephemeral. The same running instance will not repeat a completed seed on the same day; a true Render restart requires a fresh seed unless an external or persistent storage service is configured.
+
+The initial historical seed is deliberately paced and can take a few minutes for the full universe. The lightweight defaults use 7 days of 5-minute candles and 120 days of daily candles. Until enough history is available, the page remains in demo mode. Kite access tokens normally expire daily, so provide a fresh token before starting the server.
 
 For a single-process production deployment, use one worker because the process owns one KiteTicker connection:
 
@@ -60,5 +65,7 @@ python3 -m uvicorn app:app --host 0.0.0.0 --port 8050 --workers 1
 7. Deploy and open the Render URL. The health check is `/api/health`.
 
 `render.yaml` contains the same setup. Use an always-on instance for dependable market-hours streaming; sleeping instances can miss ticks. Kite access tokens usually expire daily, so update `KITE_ACCESS_TOKEN` in Render before the next session.
+
+The active-phone lock is held in process memory. Keep one worker per service, as configured above; a server restart clears active locks and allows the approved number to log in again.
 
 This is research context only. It is not an order-entry system or a trading signal.
