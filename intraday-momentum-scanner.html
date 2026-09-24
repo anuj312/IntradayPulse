@@ -332,13 +332,13 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-scroll-hint { display: none; color: #8292ae; font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 
-.flow-list { display: flex; align-items: flex-start; gap: 8px; min-height: 410px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding: 20px 19px 13px; }
+.flow-list { display: flex; align-items: flex-start; gap: 4px; min-height: 410px; overflow-x: hidden; padding: 20px 19px 13px; }
 
-.flow-row { flex: 1 1 52px; min-width: 48px; display: flex; flex-direction: column; align-items: center; gap: 0; min-height: 380px; border-bottom: 0 !important; }
+.flow-row { flex: 1 1 0; width: auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 0; min-height: 380px; border-bottom: 0 !important; }
 
 .flow-bar-zone { position: relative; width: 100%; height: 300px; flex: 0 0 390px; }
 
-.flow-bar-zone::after { content: none !important; display: none !important; background: none !important; }
+.flow-bar-zone::after { content: none; display: none; }
 
 .flow-fill { position: absolute; z-index: 1; left: 50%; width: 42px; transform: translateX(-50%); min-width: 20px; max-width: 48px; border-radius: 17px; box-shadow: 0 8px 18px rgba(0, 0, 0, .22); }
 
@@ -346,13 +346,23 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-fill.negative { top: var(--flow-baseline, 68%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
 
-.flow-name { width: 100%; color: #b9c1d0; text-align: center; font-size: 10px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; overflow: visible; text-overflow: clip; white-space: nowrap; }
+.flow-fill.buy { background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
 
-.flow-name-metric { display: block; margin-top: 4px; font-size: 10px; font-weight: 850; letter-spacing: -.03em; text-transform: none; }
+.flow-fill.sell { background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
+
+.flow-name { position: relative; z-index: 2; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 0 3px 2px; color: #b9c1d0; text-align: center; font-size: 10px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: #0e1728; }
+
+.flow-name-metric { display: block; margin-top: 3px; font-size: 10px; font-weight: 850; letter-spacing: -.03em; line-height: 1.1; text-align: center; text-transform: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .flow-name-metric.positive { color: #7ce9b8; }
 
 .flow-name-metric.negative { color: #ed7794; }
+
+.flow-pressure { display: block; margin-top: 4px; font-size: 8px; font-weight: 900; letter-spacing: .08em; line-height: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.flow-pressure.buy, .flow-name-metric.buy { color: #7ce9b8; }
+
+.flow-pressure.sell, .flow-name-metric.sell { color: #ed7794; }
 
 .flow-name-short { display: none; }
 
@@ -486,11 +496,19 @@ tbody tr:hover { background: #fafcfd; }
 
 .losers .leader-ltp { color: var(--red); }
 
-.leaders-side, .flow-panel { position: relative; }
+.leaders-side, .volume-ratio-panel, .flow-panel { position: relative; }
 
 .leaders-side .access-cta { top: 32%; }
 
-.leaders-side .leader-table tbody, .flow-panel .flow-list { filter: blur(4px); opacity: .48; pointer-events: none; user-select: none; }
+.volume-ratio-panel { margin-bottom: 19px; }
+
+.volume-ratio-grid { min-height: 0; padding-bottom: 20px; }
+
+.volume-ratio-list { flex: 0 0 500px; height: 500px; max-height: 500px; }
+
+.volume-ratio-panel .leader-table .leader-ratio { font-size: 13px; }
+
+.leaders-side .leader-table tbody, .volume-ratio-panel .leader-table tbody, .flow-panel .flow-list { filter: blur(4px); opacity: .48; pointer-events: none; user-select: none; }
 
 .access-cta { position: absolute; top: 54%; left: 50%; z-index: 4; display: grid; width: min(360px, calc(100% - 40px)); gap: 12px; transform: translate(-50%, -50%); padding: 23px 30px; border: 1px solid rgba(179, 198, 222, .78); border-radius: 20px; background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(246, 250, 255, .96) 58%, rgba(238, 253, 247, .94)); box-shadow: 0 30px 70px rgba(16, 37, 67, .2), 0 8px 20px rgba(16, 37, 67, .08), inset 0 1px 0 rgba(255, 255, 255, .95); backdrop-filter: blur(18px); isolation: isolate; text-align: center; }
 
@@ -500,7 +518,7 @@ tbody tr:hover { background: #fafcfd; }
 
 body.access-granted .access-logout { display: inline-flex; }
 
-body.access-granted .leaders-side .leader-table tbody, body.access-granted .flow-panel .flow-list { filter: none; opacity: 1; pointer-events: auto; user-select: auto; }
+body.access-granted .leaders-side .leader-table tbody, body.access-granted .volume-ratio-panel .leader-table tbody, body.access-granted .flow-panel .flow-list { filter: none; opacity: 1; pointer-events: auto; user-select: auto; }
 
 body.access-granted .access-cta { display: none; }
 
@@ -598,7 +616,7 @@ body.access-granted .access-cta { display: none; }
 
 .flow-scroll-hint { display: none; }
 
-.flow-list { display: flex; grid-template-columns: none; width: 100%; min-width: 0; min-height: 0; overflow-x: hidden; gap: 2px; padding: 18px 8px 20px; }
+.flow-list { display: flex; grid-template-columns: none; width: 100%; min-width: 0; min-height: 0; overflow-x: hidden; gap: 1px; padding: 18px 4px 20px; }
 
 .flow-row { flex: 1 1 0; width: auto; min-width: 0; min-height: 240px; height: 240px; }
 
@@ -610,9 +628,11 @@ body.access-granted .access-cta { display: none; }
 
 .flow-fill { width: 62%; min-width: 4px; max-width: 17px; border-radius: 9px; }
 
-.flow-name { width: 100%; min-height: 16px; font-size: 6px; white-space: nowrap; overflow: hidden; text-overflow: clip; line-height: 1; letter-spacing: 0; }
+.flow-name { width: 100%; min-height: 16px; padding: 0; font-size: 5px; white-space: nowrap; overflow: hidden; text-overflow: clip; line-height: 1; letter-spacing: 0; }
 
-.flow-name-metric { margin-top: 3px; font-size: 5px; letter-spacing: -.04em; }
+.flow-name-metric { margin-top: 3px; font-size: 4px; letter-spacing: -.12em; }
+
+.flow-pressure { margin-top: 3px; font-size: 4px; letter-spacing: 0; }
 
 .flow-name-full { display: none; }
 
@@ -1131,7 +1151,7 @@ top: 28%;
 
 <button type="button" data-scroll="sectorFlow"><span class="nav-icon">▥</span>SECTOR FLOW</button>
 
-<button type="button"><span class="nav-icon">◷</span>SAVED VIEWS</button>
+<button type="button" data-view="volumeRatio"><span class="nav-icon">◷</span>VOLM RATIO</button>
 
 </nav>
 
@@ -1312,6 +1332,72 @@ top: 28%;
 
 
 <div class="footer-note"><span class="shield">⬢</span><span>Illustrative scanner snapshot. Connect a market-data feed before treating values as live.</span></div>
+
+</div>
+
+
+
+<div id="volumeRatioView" class="view-hidden">
+
+<section class="panel volume-ratio-panel" aria-label="Volume ratio leaders">
+
+<div class="panel-head">
+
+<div>
+
+<h2 class="panel-title">Volm Ratio</h2>
+
+<p class="panel-caption">Top 30 stocks by volume ratio; scroll after the first 10.</p>
+
+</div>
+
+<span class="flow-sort">Sorted by VolmRatio ↓</span>
+
+</div>
+
+<div class="leaders-grid volume-ratio-grid">
+
+<section class="leader-column gainers">
+
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Stocks by VolmRatio</h3><span id="volumeLeadersCount">0 / 30</span></div>
+
+<div class="leader-list volume-ratio-list" id="volumeLeadersList"></div>
+
+</section>
+
+<section class="leader-column losers">
+
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Declines by VolmRatio</h3><span id="volumeDeclinesCount">0 / 30</span></div>
+
+<div class="leader-list volume-ratio-list" id="volumeDeclinesList"></div>
+
+</section>
+
+</div>
+
+<div class="access-cta">
+
+<a class="access-link" href="https://cosmofeed.com/vig/6a250fb87399a000136dec6b" target="_blank" rel="noopener noreferrer">
+
+<span class="access-link-lead">Click here</span>
+
+<span class="access-link-title">Join Our Private Telegram Group For Access</span>
+
+</a>
+
+<form class="access-form access-gate-form">
+
+<input class="access-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Enter Your Registered Phone number" aria-label="Registered phone number" required>
+
+<button class="access-submit" type="submit">Continue to Dashboard</button>
+
+</form>
+
+<div class="access-error" hidden></div>
+
+</div>
+
+</section>
 
 </div>
 
@@ -2010,6 +2096,68 @@ document.getElementById("losersCount").textContent = losers.length;
 
 
 
+function renderVolumeRatio(allRows) {
+
+const rows = allRows.filter(row => Number.isFinite(Number(row.ratio)));
+
+const leaders = [...rows].sort((a, b) => Number(b.ratio) - Number(a.ratio) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 30);
+
+const declines = [...rows]
+
+.sort((a, b) => Number(a.ratio) - Number(b.ratio) || String(a.symbol).localeCompare(String(b.symbol)))
+
+.slice(0, 30)
+
+.sort((a, b) => Number(b.ratio) - Number(a.ratio) || String(a.symbol).localeCompare(String(b.symbol)));
+
+const renderList = (items, tone) => items.length ? `<table class="leader-table volume-ratio-table">
+
+<colgroup><col style="width:52%"><col style="width:27%"><col style="width:21%"></colgroup>
+
+<thead><tr><th>Stock</th><th>Vol ratio</th><th>LTP %</th></tr></thead>
+
+<tbody>
+
+${items.map((row, index) => {
+
+const ratio = Number(row.ratio);
+
+const ratioClass = ratio >= 1 ? "ratio-high" : "ratio-low";
+
+const chip = row.symbol.replace(/[^A-Z]/g, "").slice(0, 2) || "•";
+
+const sector = String(row.sector || "").replaceAll("_", " ");
+
+const change = Number.isFinite(Number(row.change)) ? signed(Number(row.change), 1) + "%" : "—";
+
+return `<tr data-tradingview-symbol="${escapeHtml(row.symbol)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(row.display)} on TradingView">
+
+<td><div class="leader-stock"><div class="leader-chip ${tone}">${escapeHtml(chip)}</div><div class="leader-copy"><div class="leader-name" title="${escapeHtml(row.display)}">${escapeHtml(row.display)}</div><div class="leader-sector">${escapeHtml(sector)}</div></div></div></td>
+
+<td class="leader-ratio ${ratioClass}">${formatNumber(ratio, 2)}×</td>
+
+<td class="leader-ltp ${tone}">${change}</td>
+
+</tr>`;
+
+}).join("")}
+
+</tbody>
+
+</table>` : '<div class="empty">Volume ratio data is waiting for data.</div>';
+
+document.getElementById("volumeLeadersList").innerHTML = renderList(leaders, "positive");
+
+document.getElementById("volumeDeclinesList").innerHTML = renderList(declines, "negative");
+
+document.getElementById("volumeLeadersCount").textContent = `${leaders.length} / 30`;
+
+document.getElementById("volumeDeclinesCount").textContent = `${declines.length} / 30`;
+
+}
+
+
+
 function getFilteredRows(allRows) {
 
 return allRows.filter(row => {
@@ -2122,13 +2270,21 @@ if (isVolumeSort) {
 
 const measured = items.filter(item => Number.isFinite(sortValue(item)));
 
-const highVolume = measured.filter(item => sortValue(item) >= 1).sort((a, b) => sortValue(b) - sortValue(a));
+const greenPressure = measured
 
-const lowVolume = measured.filter(item => sortValue(item) < 1).sort((a, b) => sortValue(b) - sortValue(a));
+  .filter(item => !Number.isFinite(Number(item.mean)) || Number(item.mean) >= 0)
+
+  .sort((a, b) => sortValue(b) - sortValue(a) || String(a.name).localeCompare(String(b.name)));
+
+const redPressure = measured
+
+  .filter(item => Number(item.mean) < 0)
+
+  .sort((a, b) => sortValue(a) - sortValue(b) || String(a.name).localeCompare(String(b.name)));
 
 const missingVolume = items.filter(item => !Number.isFinite(sortValue(item)));
 
-items = [...highVolume, ...lowVolume, ...missingVolume];
+items = [...greenPressure, ...redPressure, ...missingVolume];
 
 } else {
 
@@ -2164,17 +2320,55 @@ const positiveMax = Math.max(...deltas.filter(value => value > 0), .01);
 
 const negativeMax = Math.max(...deltas.filter(value => value < 0).map(value => Math.abs(value)), .01);
 
-const totalFlow = positiveMax + negativeMax;
+const isGreenPressure = item => {
 
-const baseline = isVolumeSort ? 50 : 70 - (negativeMax / totalFlow) * 40;
+const mean = Number(item.mean);
+
+return !Number.isFinite(mean) || mean >= 0;
+
+};
+
+const greenFlowTotal = isVolumeSort
+
+? items.filter(isGreenPressure).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
+
+: items.reduce((sum, item) => sum + Math.max(0, Number(item.mean) || 0), 0);
+
+const redFlowTotal = isVolumeSort
+
+? items.filter(item => !isGreenPressure(item)).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
+
+ : items.reduce((sum, item) => sum + Math.max(0, -(Number(item.mean) || 0)), 0);
+
+const flowTotal = greenFlowTotal + redFlowTotal;
+
+const baseline = flowTotal > 0
+
+? Math.min(70, Math.max(30, greenFlowTotal / flowTotal * 100))
+
+: 50;
 
 const mobileFlow = window.matchMedia("(max-width: 760px)").matches;
 
 const chartHeight = mobileFlow ? 180 : 350;
 
-const dominantSpace = (negativeMax >= positiveMax ? 1 - baseline / 100 : baseline / 100) * chartHeight;
+const baselineGap = mobileFlow ? 2 : 4;
 
-const maxHeight = Math.max(16, dominantSpace - (mobileFlow ? 2 : 4));
+const greenHeightSpace = Math.max(16, baseline / 100 * chartHeight - baselineGap);
+
+const redHeightSpace = Math.max(16, (1 - baseline / 100) * chartHeight - baselineGap);
+
+const greenRatioMax = isVolumeSort
+
+? Math.max(...items.filter(isGreenPressure).map(item => sortValue(item)).filter(Number.isFinite), 1)
+
+: 0;
+
+const redRatioMax = isVolumeSort
+
+? Math.max(...items.filter(item => !isGreenPressure(item)).map(item => sortValue(item)).filter(Number.isFinite), 1)
+
+: 0;
 
 container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
@@ -2182,9 +2376,9 @@ container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
 document.getElementById("sectorFlowCaption").textContent = isVolumeSort
 
-? "Green = above 1.0× average volume, high to low; red = below 1.0×, downside low to high"
+? "Auto flow spacing favors the side with more total VolmRatio · bar height = raw VolmRatio mean · color = %CHG mean"
 
-: "Average percentage change across the whole universe; bars show %CHG";
+: "Auto flow spacing favors the side with more total %CHG mean · bar height = %CHG mean";
 
 container.innerHTML = items.map(item => {
 
@@ -2196,19 +2390,39 @@ const delta = metricDelta(item);
 
 const positive = hasMetric && delta >= 0;
 
-const height = hasMetric ? Math.max(8, Math.abs(delta) / Math.max(positiveMax, negativeMax) * maxHeight) : 8;
+const meanValue = Number(item.mean);
+
+const pressure = isVolumeSort
+
+? (meanValue < 0 ? "sell" : "buy")
+
+: (positive ? "positive" : "negative");
+
+const volumeSide = isVolumeSort ? (pressure === "buy" ? "positive" : "negative") : (positive ? "positive" : "negative");
+
+const height = hasMetric
+
+? (isVolumeSort ? Math.max(8, ratio / (pressure === "buy" ? greenRatioMax : redRatioMax) * (pressure === "buy" ? greenHeightSpace : redHeightSpace)) : Math.max(8, Math.abs(delta) / (positive ? positiveMax : negativeMax) * (positive ? greenHeightSpace : redHeightSpace)))
+
+: 8;
 
 const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : `${signed(item.mean)}%`;
 
-const nameMetric = isVolumeSort ? `<span class="flow-name-metric ${positive ? "positive" : "negative"}">${value}</span>` : "";
+const pressureLabel = pressure === "buy" ? "BUY" : "SELL";
+
+const changeValue = Number.isFinite(meanValue) ? signed(meanValue, 2) + "%" : "—";
+
+const nameMetric = isVolumeSort ? `<span class="flow-pressure ${pressure}">${pressureLabel}</span><span class="flow-name-metric ${pressure}">${value} · ${changeValue}</span>` : "";
 
 const footerValue = isVolumeSort ? "" : `<div class="flow-value ${positive ? "positive" : "negative"}">${value}</div>`;
 
-return `<div class="flow-row" data-sector="${item.name}">
+const rowTitle = isVolumeSort ? `${item.name.replaceAll("_", " ")} · ${pressureLabel} · VolmRatio ${value} · %CHG ${changeValue}` : item.name.replaceAll("_", " ");
+
+return `<div class="flow-row" data-sector="${item.name}" title="${escapeHtml(rowTitle)}">
 
 <div class="flow-bar-zone">
 
-<div class="flow-fill ${positive ? "positive" : "negative"}" style="height:${height.toFixed(1)}px"></div>
+<div class="flow-fill ${volumeSide} ${pressure}" style="height:${height.toFixed(1)}px"></div>
 
 </div>
 
@@ -2292,21 +2506,29 @@ function setView(view) {
 
 const flow = view === "flow";
 
-document.getElementById("momentumView").classList.toggle("view-hidden", flow);
+const volume = view === "volumeRatio";
+
+document.getElementById("momentumView").classList.toggle("view-hidden", flow || volume);
 
 document.getElementById("sectorFlow").classList.toggle("view-hidden", !flow);
 
-document.getElementById("pageTitle").textContent = flow ? "Sector flow" : "Intraday Momentum Scanner";
+document.getElementById("volumeRatioView").classList.toggle("view-hidden", !volume);
+
+document.getElementById("pageTitle").textContent = flow ? "Sector flow" : volume ? "Volm Ratio" : "Intraday Momentum Scanner";
 
 document.getElementById("pageSubhead").textContent = flow
 
 ? "Compare average percentage change across sectors. Green leads; red lags."
 
+: volume
+
+? "Compare the highest and lowest volume ratios across the watched stocks."
+
 : "Review the strongest movers now by participation, trend strength, and momentum.";
 
 document.querySelectorAll(".nav button").forEach(item =>
 
-item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : item.textContent.toLowerCase().includes("momentum"))
+item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : volume ? item.dataset.view === "volumeRatio" : item.textContent.toLowerCase().includes("momentum"))
 
 );
 
@@ -2397,6 +2619,8 @@ document.getElementById("modeNote").textContent = state.fastMode
 renderSectorFlow(allRows);
 
 renderMovers(filtered);
+
+renderVolumeRatio(allRows);
 
 }
 
@@ -2739,6 +2963,12 @@ showToast("Sector flow sorted by mean % change");
 setView("momentum");
 
 showToast("Momentum scanner selected");
+
+} else if (button.dataset.view === "volumeRatio") {
+
+setView("volumeRatio");
+
+showToast("Volm Ratio selected");
 
 } else {
 
