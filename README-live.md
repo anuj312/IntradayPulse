@@ -25,7 +25,7 @@ Open `http://127.0.0.1:8050/` in a browser. Do not open the HTML file directly i
 - Uses Kite historical candles to seed 5-minute and daily indicators.
 - Uses KiteTicker full-mode ticks for current price, volume, and five-point sparklines.
 - Calculates RSI, ADX, 21 EMA distance, time-adjusted volume ratio, recent-bar continuation, session trend quality, volume confirmation, RFactor, volatility bucket, and momentum rank. RFactor matches the supplied `dashboard_clean.py` formula: 20-session volume/range/move baselines, 0.55/0.30/0.15 weighting, price-position freshness, narrow-range penalty, and logarithmic scaling. RFactor and directional continuation directly affect rank, so an early spike loses rank when the stock goes sideways instead of continuing.
-- Calculates and exposes a live RFactor value; click any Sector flow bar to see its stocks sorted by RFactor.
+- Calculates and exposes a live RFactor value; click any Sector flow bar to see its stocks sorted by RFactor. Sector flow has button controls for average percentage change or average intraday volume ratio; volume-ratio bars show green high-to-low upside first, followed by red high-to-low downside.
 - Ranks positive and negative movers together by composite momentum score, keeping one continuous rank sequence so green and red names appear together.
 - Shows the cumulative KiteTicker tick count beside the feed status.
 - Serves `/api/scan` for the page and `/api/health` for feed status.

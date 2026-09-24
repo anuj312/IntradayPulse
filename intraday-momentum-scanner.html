@@ -286,7 +286,13 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-caption { color: var(--muted); font-size: 11px; margin: 5px 0 0; }
 
-.flow-sort { color: var(--blue); background: #eff3ff; border-radius: 99px; padding: 6px 9px; font-size: 10px; font-weight: 780; white-space: nowrap; }
+.flow-sort { display: inline-flex; align-items: center; gap: 3px; color: var(--blue); background: #eff3ff; border-radius: 99px; padding: 3px; font-size: 10px; font-weight: 780; white-space: nowrap; }
+
+.flow-sort button { border: 0; border-radius: 99px; padding: 5px 8px; color: inherit; background: transparent; cursor: pointer; font: inherit; font-weight: 850; }
+
+.flow-sort button:hover { color: var(--ink); background: rgba(255, 255, 255, .7); }
+
+.flow-sort button.active { color: #17304f; background: white; box-shadow: 0 3px 8px rgba(18, 31, 53, .16); }
 
 .flow-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; padding: 8px 19px 13px; }
 
@@ -322,6 +328,8 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-sort { color: #b9c7ff; background: #202b48; }
 
+.flow-sort button.active { color: #15233b; background: #edf3ff; }
+
 .flow-scroll-hint { display: none; color: #8292ae; font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 
 .flow-list { display: flex; align-items: flex-start; gap: 8px; min-height: 410px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; padding: 20px 19px 13px; }
@@ -339,6 +347,12 @@ tbody tr:hover { background: #fafcfd; }
 .flow-fill.negative { top: var(--flow-baseline, 68%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
 
 .flow-name { width: 100%; color: #b9c1d0; text-align: center; font-size: 10px; font-weight: 820; letter-spacing: .08em; text-transform: uppercase; overflow: visible; text-overflow: clip; white-space: nowrap; }
+
+.flow-name-metric { display: block; margin-top: 4px; font-size: 10px; font-weight: 850; letter-spacing: -.03em; text-transform: none; }
+
+.flow-name-metric.positive { color: #7ce9b8; }
+
+.flow-name-metric.negative { color: #ed7794; }
 
 .flow-name-short { display: none; }
 
@@ -597,6 +611,8 @@ body.access-granted .access-cta { display: none; }
 .flow-fill { width: 62%; min-width: 4px; max-width: 17px; border-radius: 9px; }
 
 .flow-name { width: 100%; min-height: 16px; font-size: 6px; white-space: nowrap; overflow: hidden; text-overflow: clip; line-height: 1; letter-spacing: 0; }
+
+.flow-name-metric { margin-top: 3px; font-size: 5px; letter-spacing: -.04em; }
 
 .flow-name-full { display: none; }
 
@@ -1309,13 +1325,19 @@ top: 28%;
 
 <h2 class="flow-title">Sector flow</h2>
 
-<p class="flow-caption">Average percentage change across the whole universe</p>
+<p class="flow-caption" id="sectorFlowCaption">Average percentage change across the whole universe; bars show %CHG</p>
 
 <span class="flow-scroll-hint">Auto-sized for your screen</span>
 
 </div>
 
-<span class="flow-sort">Sorted by %CHG mean ↓</span>
+<div class="flow-sort" role="group" aria-label="Sector flow sort metric">
+
+<button class="active" type="button" data-flow-sort="mean">%CHG mean</button>
+
+<button type="button" data-flow-sort="volume_ratio_mean">VolmRatio</button>
+
+</div>
 
 </div>
 
@@ -1461,6 +1483,8 @@ universe: "stocks",
 
 sector: "all",
 
+sectorSort: "mean",
+
 search: "",
 
 seed: 1,
@@ -1503,7 +1527,9 @@ search: document.getElementById("search"),
 
 volatility: document.getElementById("volatility"),
 
-universe: document.getElementById("universe")
+universe: document.getElementById("universe"),
+
+sectorSortButtons: [...document.querySelectorAll("[data-flow-sort]")]
 
 };
 
@@ -1559,7 +1585,9 @@ function makeRow(symbol, sector, index = 0, isIndex = false) {
 
 const direction = unit(symbol, "direction") > .46 ? 1 : -1;
 
-const participation = .78 + unit(symbol, "ratio") * 1.7;
+const sectorVolumeBias = (unit(sector, "ratioBias") - .5) * 1.5;
+
+const participation = Math.max(.35, .72 + unit(symbol, "ratio") * 1.1 + sectorVolumeBias);
 
 const trend = 15 + unit(symbol, "adx") * 24;
 
@@ -2040,7 +2068,7 @@ const grouped = new Map();
 
 if (state.universe === "index") {
 
-allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
+ allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, sumRatio: Number(row.ratio) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
 
 } else {
 
@@ -2058,7 +2086,9 @@ grouped.set(sector, {
 
 rows,
 
-sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0),
+ sum: rows.reduce((sum, row) => sum + (Number(row.change) || 0), 0),
+
+ sumRatio: rows.reduce((sum, row) => sum + (Number(row.ratio) || 0), 0),
 
 count: rows.length,
 
@@ -2074,9 +2104,35 @@ down: rows.filter(row => row.change < 0).length
 
 items = [...grouped.entries()]
 
-.map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1) }))
+ .map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1), volume_ratio_mean: group.sumRatio / Math.max(group.count, 1) }));
 
-.sort((a, b) => b.mean - a.mean);
+}
+
+const sortValue = item => {
+
+const value = Number(item[state.sectorSort]);
+
+return item[state.sectorSort] == null || !Number.isFinite(value) ? -Infinity : value;
+
+};
+
+const isVolumeSort = state.sectorSort === "volume_ratio_mean";
+
+if (isVolumeSort) {
+
+const measured = items.filter(item => Number.isFinite(sortValue(item)));
+
+const highVolume = measured.filter(item => sortValue(item) >= 1).sort((a, b) => sortValue(b) - sortValue(a));
+
+const lowVolume = measured.filter(item => sortValue(item) < 1).sort((a, b) => sortValue(b) - sortValue(a));
+
+const missingVolume = items.filter(item => !Number.isFinite(sortValue(item)));
+
+items = [...highVolume, ...lowVolume, ...missingVolume];
+
+} else {
+
+items = [...items].sort((a, b) => sortValue(b) - sortValue(a) || Number(b.mean || 0) - Number(a.mean || 0));
 
 }
 
@@ -2092,13 +2148,25 @@ return;
 
 
 
-const positiveMax = Math.max(...items.filter(item => item.mean > 0).map(item => item.mean), .01);
+const metricDelta = item => {
 
-const negativeMax = Math.max(...items.filter(item => item.mean < 0).map(item => Math.abs(item.mean)), .01);
+if (!isVolumeSort) return Number(item.mean) || 0;
+
+const ratio = sortValue(item);
+
+return Number.isFinite(ratio) ? ratio - 1 : 0;
+
+};
+
+const deltas = items.map(metricDelta);
+
+const positiveMax = Math.max(...deltas.filter(value => value > 0), .01);
+
+const negativeMax = Math.max(...deltas.filter(value => value < 0).map(value => Math.abs(value)), .01);
 
 const totalFlow = positiveMax + negativeMax;
 
-const baseline = 70 - (negativeMax / totalFlow) * 40;
+const baseline = isVolumeSort ? 50 : 70 - (negativeMax / totalFlow) * 40;
 
 const mobileFlow = window.matchMedia("(max-width: 760px)").matches;
 
@@ -2112,11 +2180,29 @@ container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
 
 
+document.getElementById("sectorFlowCaption").textContent = isVolumeSort
+
+? "Green = above 1.0× average volume, high to low; red = below 1.0×, downside low to high"
+
+: "Average percentage change across the whole universe; bars show %CHG";
+
 container.innerHTML = items.map(item => {
 
-const positive = item.mean >= 0;
+const ratio = sortValue(item);
 
-const height = Math.max(8, Math.abs(item.mean) / Math.max(positiveMax, negativeMax) * maxHeight);
+const hasMetric = !isVolumeSort || Number.isFinite(ratio);
+
+const delta = metricDelta(item);
+
+const positive = hasMetric && delta >= 0;
+
+const height = hasMetric ? Math.max(8, Math.abs(delta) / Math.max(positiveMax, negativeMax) * maxHeight) : 8;
+
+const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : `${signed(item.mean)}%`;
+
+const nameMetric = isVolumeSort ? `<span class="flow-name-metric ${positive ? "positive" : "negative"}">${value}</span>` : "";
+
+const footerValue = isVolumeSort ? "" : `<div class="flow-value ${positive ? "positive" : "negative"}">${value}</div>`;
 
 return `<div class="flow-row" data-sector="${item.name}">
 
@@ -2132,9 +2218,11 @@ return `<div class="flow-row" data-sector="${item.name}">
 
 <span class="flow-name-short">${compactSectorName(item.name)}</span>
 
+${nameMetric}
+
 </div>
 
-<div class="flow-value ${positive ? "positive" : "negative"}">${signed(item.mean)}%</div>
+${footerValue}
 
 </div>`;
 
@@ -2523,6 +2611,18 @@ if (state.accessGranted) loadLiveData();
 })
 
 );
+
+els.sectorSortButtons.forEach(button => button.addEventListener("click", () => {
+
+state.sectorSort = button.dataset.flowSort;
+
+els.sectorSortButtons.forEach(item => item.classList.toggle("active", item === button));
+
+render();
+
+showToast(`${button.textContent.trim()} selected`);
+
+}));
 
 
 

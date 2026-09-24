@@ -1304,6 +1304,7 @@ def build_sector_flow() -> List[dict]:
             membership.setdefault(symbol, group)
 
     grouped: Dict[str, dict] = {}
+    now = datetime.now(IST)
     with DATA_LOCK:
         ticks = {symbol: dict(TICK_STATE.get(token) or {}) for symbol, token in SYMBOL_TO_TOKEN.items()}
 
@@ -1317,8 +1318,30 @@ def build_sector_flow() -> List[dict]:
         if not ltp or not open_price:
             continue
         change = (ltp - open_price) / open_price * 100.0
-        group = grouped.setdefault(sector, {"name": sector, "sum": 0.0, "count": 0, "up": 0, "down": 0})
+        token = SYMBOL_TO_TOKEN.get(symbol)
+        volume_ratio = None
+        if token:
+            with DATA_LOCK:
+                daily = HISTORY.get(token, {}).get("regular")
+            if daily is not None and not daily.empty:
+                volume_ratio = _volume_ratio(token, "intraday", _as_float(tick.get("volume")) or 0.0, now)
+
+        group = grouped.setdefault(
+            sector,
+            {
+                "name": sector,
+                "sum": 0.0,
+                "volume_ratio_sum": 0.0,
+                "volume_ratio_count": 0,
+                "count": 0,
+                "up": 0,
+                "down": 0,
+            },
+        )
         group["sum"] += change
+        if volume_ratio is not None:
+            group["volume_ratio_sum"] += volume_ratio
+            group["volume_ratio_count"] += 1
         group["count"] += 1
         group["up"] += int(change >= 0)
         group["down"] += int(change < 0)
@@ -1330,6 +1353,11 @@ def build_sector_flow() -> List[dict]:
         {
             "name": group["name"],
             "mean": round(mean(group), 2),
+            "volume_ratio_mean": round(
+                group["volume_ratio_sum"] / group["volume_ratio_count"], 2
+            )
+            if group["volume_ratio_count"]
+            else None,
             "count": group["count"],
             "up": group["up"],
             "down": group["down"],
