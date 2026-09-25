@@ -1347,7 +1347,7 @@ top: 28%;
 
 <h2 class="panel-title">Volm Ratio</h2>
 
-<p class="panel-caption">Top 30 stocks by volume ratio; scroll after the first 10.</p>
+<p class="panel-caption">Positive and negative %CHG stocks, each sorted by VolmRatio; scroll after the first 10.</p>
 
 </div>
 
@@ -1359,7 +1359,7 @@ top: 28%;
 
 <section class="leader-column gainers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Stocks by VolmRatio</h3><span id="volumeLeadersCount">0 / 30</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers by VolmRatio</h3><span id="volumeLeadersCount">0 / 30</span></div>
 
 <div class="leader-list volume-ratio-list" id="volumeLeadersList"></div>
 
@@ -1367,7 +1367,7 @@ top: 28%;
 
 <section class="leader-column losers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Declines by VolmRatio</h3><span id="volumeDeclinesCount">0 / 30</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Decliners by VolmRatio</h3><span id="volumeDeclinesCount">0 / 30</span></div>
 
 <div class="leader-list volume-ratio-list" id="volumeDeclinesList"></div>
 
@@ -2100,15 +2100,21 @@ function renderVolumeRatio(allRows) {
 
 const rows = allRows.filter(row => Number.isFinite(Number(row.ratio)));
 
-const leaders = [...rows].sort((a, b) => Number(b.ratio) - Number(a.ratio) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 30);
+const leaders = rows
+
+.filter(row => Number.isFinite(Number(row.change)) && Number(row.change) >= 0)
+
+.sort((a, b) => Number(b.ratio) - Number(a.ratio) || Number(b.change) - Number(a.change) || String(a.symbol).localeCompare(String(b.symbol)))
+
+.slice(0, 30);
 
 const declines = [...rows]
 
-.sort((a, b) => Number(a.ratio) - Number(b.ratio) || String(a.symbol).localeCompare(String(b.symbol)))
+.filter(row => Number.isFinite(Number(row.change)) && Number(row.change) < 0)
 
-.slice(0, 30)
+.sort((a, b) => Number(b.ratio) - Number(a.ratio) || Number(a.change) - Number(b.change) || String(a.symbol).localeCompare(String(b.symbol)))
 
-.sort((a, b) => Number(b.ratio) - Number(a.ratio) || String(a.symbol).localeCompare(String(b.symbol)));
+.slice(0, 30);
 
 const renderList = (items, tone) => items.length ? `<table class="leader-table volume-ratio-table">
 
@@ -2412,7 +2418,7 @@ const pressureLabel = pressure === "buy" ? "BUY" : "SELL";
 
 const changeValue = Number.isFinite(meanValue) ? signed(meanValue, 2) + "%" : "—";
 
-const nameMetric = isVolumeSort ? `<span class="flow-pressure ${pressure}">${pressureLabel}</span><span class="flow-name-metric ${pressure}">${value} · ${changeValue}</span>` : "";
+const nameMetric = isVolumeSort ? `<span class="flow-name-metric ${pressure}">${value}</span>` : "";
 
 const footerValue = isVolumeSort ? "" : `<div class="flow-value ${positive ? "positive" : "negative"}">${value}</div>`;
 
