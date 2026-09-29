@@ -164,6 +164,22 @@ h1 { font-size: clamp(25px, 3vw, 34px); line-height: 1.05; letter-spacing: -.055
 
 .summary-foot.down { color: var(--red); font-weight: 700; }
 
+.nifty-regime-card { --regime-accent: #68778d; --regime-bg: linear-gradient(135deg, #f7f9fc, #eef3f8); --regime-border: #d9e3ee; --regime-text: #203653; display: inline-flex; flex: 0 1 auto; min-width: 0; align-items: center; gap: 7px; min-height: 31px; margin: 0; padding: 7px 12px; border: 1px solid var(--regime-border); border-radius: 99px; background: var(--regime-bg); color: var(--regime-text); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .82), 0 5px 14px rgba(31, 62, 96, .06); transition: background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+
+.nifty-regime-card[data-regime="bullish"], .nifty-regime-card[data-regime="turning-bullish"] { --regime-accent: #078968; --regime-bg: linear-gradient(135deg, #f1fff9, #e2f8ee); --regime-border: #b9e8d3; }
+
+.nifty-regime-card[data-regime="bearish"], .nifty-regime-card[data-regime="turning-bearish"] { --regime-accent: #c23d51; --regime-bg: linear-gradient(135deg, #fff8f9, #fdebed); --regime-border: #f0cbd2; }
+
+.nifty-regime-orb { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--regime-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--regime-accent) 14%, transparent); }
+
+.nifty-regime-copy { display: flex; min-width: 0; align-items: baseline; gap: 0; flex-wrap: nowrap; }
+
+.nifty-regime-kicker { display: none; }
+
+.nifty-regime-label { overflow: hidden; color: var(--regime-text); font-size: 10px; font-weight: 900; letter-spacing: .03em; text-overflow: ellipsis; white-space: nowrap; }
+
+.nifty-regime-meta { display: none; }
+
 .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; align-items: stretch; gap: 18px; }
 
 .content-grid > .panel { display: flex; height: 780px; min-height: 0; flex-direction: column; }
@@ -394,7 +410,7 @@ tbody tr:hover { background: #fafcfd; }
 
 .sector-modal-columns { color: #8c96a6; background: #fafbfc; padding-top: 10px; padding-bottom: 10px; font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 
-.sector-modal-columns span:nth-child(n+2), .sector-modal-ratio, .sector-stock-rfactor { text-align: right; }
+.sector-modal-columns span:nth-child(n+2), .sector-modal-ratio, .sector-stock-score { text-align: right; }
 
 .sector-modal-rows { max-height: 56vh; overflow-y: auto; }
 
@@ -410,7 +426,7 @@ tbody tr:hover { background: #fafcfd; }
 
 .sector-modal-ratio { color: var(--green); font-size: 13px; font-weight: 850; }
 
-.sector-stock-rfactor { color: var(--blue); font-size: 13px; font-weight: 850; }
+.sector-stock-score { color: #000000; font-size: 13px; font-weight: 850; }
 
 .sector-modal-empty { color: var(--muted); padding: 22px 19px; font-size: 11px; }
 
@@ -426,7 +442,17 @@ tbody tr:hover { background: #fafcfd; }
 
 .leader-column-head h3 { flex: 1; margin: 0; font-size: 11px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 
-.leader-column-head > span:last-child { color: #91a0b3; font-size: 9px; font-weight: 800; }
+.leader-column-head .leader-average { color: #6d7d91; font-size: 9px; font-weight: 800; white-space: nowrap; }
+
+.leader-column-head .leader-average { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 4px 9px 4px 8px; border: 1px solid #cfe3dc; border-radius: 999px; background: linear-gradient(135deg, #f2fffa, #e5f8f0); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .88), 0 4px 10px rgba(38, 122, 91, .08); color: #087252; font-size: 8px; font-weight: 850; letter-spacing: .015em; font-variant-numeric: tabular-nums; }
+
+.leader-column-head .leader-average::before { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px rgba(8, 114, 82, .10); content: ""; }
+
+.losers .leader-column-head .leader-average { border-color: #f0d2d7; background: linear-gradient(135deg, #fff7f8, #fdecef); color: #a5303c; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 4px 10px rgba(174, 57, 72, .08); }
+
+.losers .leader-column-head .leader-average::before { box-shadow: 0 0 0 3px rgba(165, 48, 60, .10); }
+
+.leader-column-head > span:last-child:not(.leader-average) { color: #91a0b3; font-size: 9px; font-weight: 800; }
 
 .leader-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
 
@@ -450,6 +476,8 @@ tbody tr:hover { background: #fafcfd; }
 
 .leader-table th:not(:first-child), .leader-table td:not(:first-child) { text-align: right; }
 
+.leader-table th:nth-child(2), .leader-table td:nth-child(2) { text-align: center; }
+
 .leader-table tbody tr { border-bottom: 1px solid #edf1f5; }
 
 .leader-table tbody tr:hover { background: #f7fbff; }
@@ -469,6 +497,8 @@ tbody tr:hover { background: #fafcfd; }
 .leader-sector { margin-top: 3px; overflow: hidden; color: #99a1ad; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 
 .leader-table .leader-rank { color: #1b2f4d; font-size: 12px; font-weight: 850; font-variant-numeric: tabular-nums; }
+
+.leader-table .leader-score { color: #000000; font-size: 12px; font-weight: 850; font-variant-numeric: tabular-nums; }
 
 .leader-table .leader-ltp { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
@@ -505,6 +535,10 @@ tbody tr:hover { background: #fafcfd; }
 .volume-ratio-grid { min-height: 0; padding-bottom: 20px; }
 
 .volume-ratio-list { flex: 0 0 500px; height: 500px; max-height: 500px; }
+
+.score-list { flex: 0 0 640px; height: 640px; max-height: 640px; }
+
+.change-panel .leader-score { color: #000000; font-size: 12px; font-weight: 850; font-variant-numeric: tabular-nums; }
 
 .volume-ratio-panel .leader-table .leader-ratio { font-size: 13px; }
 
@@ -609,6 +643,12 @@ body.access-granted .access-cta { display: none; }
 .summary-card { padding: 13px; min-height: 98px; }
 
 .summary-value { font-size: 21px; }
+
+.nifty-regime-card { align-items: center; max-width: 100%; padding: 7px 10px; }
+
+.nifty-regime-label { max-width: calc(100vw - 52px); font-size: 9px; }
+
+.nifty-regime-meta { width: auto; }
 
 .flow-head { padding-left: 14px; padding-right: 14px; }
 
@@ -815,7 +855,7 @@ tbody tr:hover { background: linear-gradient(90deg, #fbfdff, #f6fbfa, #fbfdff); 
 
 .sector-modal-columns { color: #8491a4; }
 
-.sector-stock-rfactor { font-variant-numeric: tabular-nums; }
+.sector-stock-score { font-variant-numeric: tabular-nums; }
 
 .footer-note { color: #7c899d; }
 
@@ -894,6 +934,10 @@ tbody tr:has(.stock-chip.red) td:first-child { box-shadow: inset 3px 0 #ef9298; 
 .footer-note { padding-left: 4px; }
 
 @media (max-width: 760px) {
+
+* { scrollbar-width: none; -ms-overflow-style: none; }
+
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 .rail { position: static; height: auto; box-shadow: none; }
 
@@ -1100,6 +1144,11 @@ top: 28%;
   body.theme-dark .summary-card { background: linear-gradient(145deg, rgba(24, 39, 63, .98), rgba(16, 29, 49, .94)); border-color: #2d3d57; box-shadow: 0 10px 24px rgba(0, 0, 0, .2); }
   body.theme-dark .summary-label, body.theme-dark .summary-foot { color: #9aa9bf; }
   body.theme-dark .summary-value { color: #f0f5ff; }
+  body.theme-dark .nifty-regime-card { --regime-text: #edf3ff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 8px 20px rgba(0, 0, 0, .18); }
+  body.theme-dark .nifty-regime-card[data-regime="waiting"] { --regime-bg: linear-gradient(135deg, #17243a, #132238); --regime-border: #334760; }
+  body.theme-dark .nifty-regime-card[data-regime="bullish"], body.theme-dark .nifty-regime-card[data-regime="turning-bullish"] { --regime-bg: linear-gradient(135deg, #173e36, #15322f); --regime-border: #2b6b59; }
+  body.theme-dark .nifty-regime-card[data-regime="bearish"], body.theme-dark .nifty-regime-card[data-regime="turning-bearish"] { --regime-bg: linear-gradient(135deg, #452630, #351f2a); --regime-border: #70404b; }
+  body.theme-dark .nifty-regime-meta { color: #9aa9bf; }
   body.theme-dark .panel { background: #111d31; border-color: #2d3d57; box-shadow: 0 24px 55px rgba(0, 0, 0, .24), 0 2px 4px rgba(0, 0, 0, .18); }
   body.theme-dark .panel-head { background: linear-gradient(135deg, rgba(23, 38, 62, .98), rgba(16, 29, 49, .94)); border-color: #2d3d57; }
   body.theme-dark .panel-title, body.theme-dark .side-title { color: #edf3ff; }
@@ -1112,8 +1161,14 @@ top: 28%;
   body.theme-dark .stock-sector, body.theme-dark .leader-sector { color: #8fa0ba; }
   body.theme-dark .leaders-head { border-color: #2d3d57; }
   body.theme-dark .leader-column-head { color: #d2ddec; }
+  body.theme-dark .leader-column-head .leader-average { border-color: #285e50; background: linear-gradient(135deg, #173d35, #15322f); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 5px 14px rgba(0, 0, 0, .18); color: #92edc7; }
+  body.theme-dark .leader-column-head .leader-average::before { box-shadow: 0 0 0 3px rgba(146, 237, 199, .12); }
+  body.theme-dark .losers .leader-column-head .leader-average { border-color: #6b3742; background: linear-gradient(135deg, #43252f, #351f2a); color: #ffabb7; }
+  body.theme-dark .losers .leader-column-head .leader-average::before { box-shadow: 0 0 0 3px rgba(255, 171, 183, .12); }
+  body.theme-dark .sector-stock-score { color: #ffffff; }
   body.theme-dark .leader-column + .leader-column { border-color: #2d3d57; }
   body.theme-dark .leader-table tbody tr { border-color: #263650; }
+  body.theme-dark .leader-table .leader-score, body.theme-dark .change-panel .leader-score { color: #ffffff; }
   body.theme-dark .leader-table .leader-rank { color: #d1dced; }
   body.theme-dark .leader-table .leader-ratio { color: #a6b9e2; }
   body.theme-dark .leader-table .leader-adx.adx-low { color: #aebbd0; background: #25334a; }
@@ -1130,7 +1185,229 @@ top: 28%;
   body.theme-dark .access-cta { background: linear-gradient(145deg, rgba(24, 39, 63, .98), rgba(16, 29, 49, .96) 58%, rgba(18, 58, 58, .94)); border-color: #405675; box-shadow: 0 30px 70px rgba(0, 0, 0, .44), 0 8px 20px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08); }
   body.theme-dark .access-form input { color: #edf3ff; background: #17243a; border-color: #405675; }
   body.theme-dark .access-form input::placeholder { color: #9aa9bf; }
-  @media (max-width: 520px) { .sector-modal-columns, .sector-stock-row { grid-template-columns: minmax(0, 1fr) 72px 72px; gap: 8px; padding-right: 12px; padding-left: 12px; } .sector-modal-columns { font-size: 8px; } .sector-stock-row, .sector-modal-ratio, .sector-stock-rfactor { font-size: 11px; } .sector-stock-name { font-size: 13px; } }
+  @media (max-width: 520px) { .sector-modal-columns, .sector-stock-row { grid-template-columns: minmax(0, 1fr) 72px 72px; gap: 8px; padding-right: 12px; padding-left: 12px; } .sector-modal-columns { font-size: 8px; } .sector-stock-row, .sector-modal-ratio, .sector-stock-score { font-size: 11px; } .sector-stock-name { font-size: 13px; } }
+  @media (max-width: 520px) { .leader-column-head { gap: 4px; } .leader-column-head .leader-average { min-height: 21px; padding: 3px 6px; font-size: 7px; } .leader-column-head .leader-average::before { width: 4px; height: 4px; flex-basis: 4px; box-shadow: 0 0 0 2px rgba(8, 114, 82, .10); } }
+  /* Premium interface layer */
+  :root { --ink: #10203a; --muted: #73829a; --line: #d9e3ef; --paper: #f2f6fb; --card: #ffffff; --navy: #081525; --navy-2: #142947; --green: #079b79; --green-soft: #e2f7ef; --red: #d84e61; --red-soft: #fff0f2; --amber: #b97920; --amber-soft: #fff6e6; --blue: #416fe0; --shadow: 0 20px 52px rgba(29, 55, 91, .11); --radius: 18px; }
+
+  html { background: var(--paper); color: var(--ink); font-feature-settings: "ss01" 1, "cv02" 1; }
+
+  body { background: radial-gradient(circle at 86% -8%, rgba(85, 133, 231, .17), transparent 31%), radial-gradient(circle at 10% 4%, rgba(34, 177, 139, .12), transparent 27%), linear-gradient(135deg, #eef4fb 0%, #f8fbff 55%, #eef5f7 100%); color: var(--ink); }
+
+  .rail { width: 258px; flex-basis: 258px; padding: 30px 16px 21px; border-right: 1px solid rgba(176, 201, 231, .12); background: linear-gradient(180deg, #071322 0%, #0b1a30 51%, #10243f 100%); box-shadow: 14px 0 42px rgba(9, 24, 48, .12); }
+
+  .brand { padding: 0 10px 35px; }
+
+  .brand-mark { width: 38px; height: 38px; border-radius: 13px; background: linear-gradient(145deg, #d9ffeb 0%, #8ae4bd 48%, #58b9bc 100%); color: #082e2a; box-shadow: 0 10px 22px rgba(70, 213, 171, .22), inset 0 1px 0 rgba(255, 255, 255, .8); }
+
+  .brand-name { font-size: 17px; letter-spacing: -.045em; }
+
+  .brand-name span { color: #89a3c9; }
+
+  .rail-label { color: #7188a9; letter-spacing: .16em; }
+
+  .nav { gap: 7px; }
+
+  .nav button { border: 1px solid transparent; color: #aebdd3; padding: 12px; transition: border-color .2s ease, background .2s ease, color .2s ease, transform .2s ease; }
+
+  .nav button:hover { border-color: rgba(139, 183, 231, .16); background: rgba(106, 160, 221, .1); color: #f0f6ff; transform: translateX(2px); }
+
+  .nav button.active { border-color: rgba(145, 199, 255, .2); background: linear-gradient(100deg, rgba(78, 137, 214, .28), rgba(52, 187, 157, .1)); color: #f4f8ff; box-shadow: inset 3px 0 #8af0c7, 0 10px 22px rgba(3, 11, 25, .16); }
+
+  .nav button.active .nav-icon { color: #baf8de; }
+
+  .rail-note { border-color: rgba(122, 161, 210, .16); background: linear-gradient(145deg, rgba(28, 53, 87, .74), rgba(15, 33, 58, .72)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
+
+  .profile { border-top-color: rgba(122, 161, 210, .16); }
+
+  .main { padding: 34px 42px 52px; }
+
+  .topline { margin-bottom: 25px; }
+
+  .eyebrow { color: #078e6f; letter-spacing: .2em; }
+
+  h1 { margin-top: 13px; font-size: clamp(28px, 3.2vw, 42px); font-weight: 860; letter-spacing: -.07em; background: linear-gradient(110deg, #0d203f 4%, #274c7b 50%, #087a69 105%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .top-actions { gap: 8px; }
+
+  .action, .ticks-chip, .feed-chip { border-color: #d3dfed; box-shadow: 0 7px 16px rgba(39, 67, 105, .08); }
+
+  .action { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+
+  .action:hover { transform: translateY(-1px); box-shadow: 0 11px 22px rgba(39, 67, 105, .12); }
+
+  .action.primary { background: linear-gradient(135deg, #142746 0%, #0b172b 58%, #1c3b68 100%); border-color: #10233f; box-shadow: 0 12px 22px rgba(9, 25, 51, .22), inset 0 1px 0 rgba(255, 255, 255, .12); }
+
+  .nifty-regime-card { min-height: 33px; border-color: #d2dfeb; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 8px 18px rgba(31, 62, 96, .08); }
+
+  .toolbar { gap: 9px; margin-bottom: 18px; border-color: rgba(207, 220, 236, .95); background: rgba(255, 255, 255, .72); box-shadow: 0 16px 35px rgba(38, 69, 111, .08), inset 0 1px 0 rgba(255, 255, 255, .95); backdrop-filter: blur(18px); }
+
+  .segmented { border-color: #dbe5ef; background: #f4f7fb; }
+
+  .segmented button { transition: background .2s ease, color .2s ease, box-shadow .2s ease; }
+
+  .segmented button.active { background: linear-gradient(145deg, #182e4e, #0d1c34); box-shadow: 0 6px 13px rgba(14, 33, 60, .2), inset 0 1px 0 rgba(255, 255, 255, .13); }
+
+  .select-wrap select, .search { border-color: #dbe5ef; background: rgba(248, 250, 253, .88); transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+
+  .select-wrap select:focus, .search:focus-within { border-color: #82a9d6; background: white; box-shadow: 0 0 0 4px rgba(76, 131, 215, .1); }
+
+  .summary-grid { gap: 14px; margin-bottom: 21px; }
+
+  .summary-card { position: relative; overflow: hidden; border-color: rgba(211, 223, 238, .94); border-radius: 17px; background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(248, 251, 255, .92)); box-shadow: 0 15px 32px rgba(40, 67, 102, .08), inset 0 1px 0 rgba(255, 255, 255, .96); transition: transform .2s ease, box-shadow .2s ease; }
+
+  .summary-card::before { position: absolute; top: 0; right: 19px; left: 19px; height: 2px; border-radius: 0 0 9px 9px; background: linear-gradient(90deg, rgba(59, 113, 206, .06), rgba(59, 113, 206, .55), rgba(59, 113, 206, .06)); content: ""; }
+
+  .summary-card:nth-child(2)::before { background: linear-gradient(90deg, rgba(6, 167, 125, .06), rgba(6, 167, 125, .7), rgba(6, 167, 125, .06)); }
+
+  .summary-card:nth-child(3)::before { background: linear-gradient(90deg, rgba(216, 78, 97, .06), rgba(216, 78, 97, .7), rgba(216, 78, 97, .06)); }
+
+  .summary-card:hover { transform: translateY(-2px); box-shadow: 0 20px 38px rgba(40, 67, 102, .12), inset 0 1px 0 rgba(255, 255, 255, .96); }
+
+  .summary-label { color: #71839e; letter-spacing: .02em; }
+
+  .summary-value { color: #172b4a; font-size: 28px; font-weight: 850; }
+
+  .content-grid > .panel { border-color: rgba(207, 219, 234, .95); border-radius: 21px; box-shadow: 0 23px 55px rgba(36, 54, 88, .1), inset 0 1px 0 rgba(255, 255, 255, .88); }
+
+  .leaders-side { background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(247, 250, 254, .95)); }
+
+  .leader-column-head { padding-bottom: 12px; color: #193250; }
+
+  .leader-column-head h3 { letter-spacing: .11em; }
+
+  .leader-column + .leader-column { border-left-color: #dfe8f2; }
+
+  .leader-table th { background: linear-gradient(180deg, #f9fbfe, #f1f5fa); color: #8090a7; letter-spacing: .11em; border-bottom-color: #e3ebf3; }
+
+  .leader-table td { padding-top: 10px; padding-bottom: 10px; color: #34465f; }
+
+  .leader-table tbody tr { border-bottom-color: #e6edf4; transition: background .18s ease, transform .18s ease; }
+
+  .leader-table tbody tr:hover { background: linear-gradient(90deg, rgba(231, 250, 243, .76), rgba(244, 249, 255, .9)); }
+
+  .leader-chip { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 5px 10px rgba(45, 74, 108, .08); }
+
+  .leader-table .leader-name { color: #152a48; font-weight: 830; }
+
+  .leader-table .leader-score { color: #132742; }
+
+  .access-cta { border-color: rgba(187, 208, 231, .82); background: linear-gradient(145deg, rgba(255, 255, 255, .98), rgba(244, 250, 255, .96) 58%, rgba(233, 253, 246, .95)); box-shadow: 0 30px 80px rgba(16, 37, 67, .22), 0 10px 24px rgba(16, 37, 67, .09), inset 0 1px 0 rgba(255, 255, 255, .98); }
+
+  .flow-panel { border-color: #35466a; background: linear-gradient(180deg, #0c172a 0%, #0a1425 100%); box-shadow: 0 27px 65px rgba(8, 20, 41, .23), 0 0 0 1px rgba(135, 161, 225, .12); }
+
+  .flow-head { border-bottom-color: rgba(121, 150, 207, .18); background: linear-gradient(180deg, rgba(31, 52, 87, .72), rgba(12, 23, 42, .36)); }
+
+  .flow-sort { background: rgba(40, 55, 95, .84); box-shadow: inset 0 0 0 1px rgba(180, 197, 255, .12), 0 7px 18px rgba(0, 0, 0, .12); }
+
+  .flow-sort button.active { box-shadow: 0 5px 12px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .84); }
+
+  .flow-bar-zone::before { position: absolute; top: var(--flow-baseline, 68%); right: 3%; left: 3%; height: 1px; background: linear-gradient(90deg, transparent, rgba(177, 198, 235, .36), transparent); content: ""; }
+
+  .flow-fill { box-shadow: 0 13px 27px rgba(67, 202, 153, .22), inset 0 1px 0 rgba(255, 255, 255, .25); }
+
+  .flow-fill.negative, .flow-fill.sell { box-shadow: 0 13px 27px rgba(210, 70, 105, .22), inset 0 1px 0 rgba(255, 255, 255, .22); }
+
+  .flow-name { background: #0b1628; color: #c4cee0; }
+
+  .sector-modal-backdrop { background: rgba(4, 11, 22, .72); backdrop-filter: blur(9px) saturate(1.15); }
+
+  .sector-modal { border-color: rgba(204, 218, 237, .9); border-radius: 20px; box-shadow: 0 35px 100px rgba(8, 21, 44, .28), 0 2px 0 rgba(255, 255, 255, .8) inset; }
+
+  .sector-modal-head { padding: 21px 21px 16px; background: linear-gradient(145deg, #ffffff, #f3f8fd); }
+
+  .sector-modal-title { color: #132947; font-size: 18px; }
+
+  .sector-modal-close { transition: background .2s ease, color .2s ease, transform .2s ease; }
+
+  .sector-modal-close:hover { transform: rotate(4deg); }
+
+  .sector-modal-columns { background: #f5f8fc; color: #8494aa; }
+
+  .sector-stock-row { transition: background .18s ease; }
+
+  .sector-stock-row:hover { background: #f4f9ff; }
+
+  .footer-note { color: #7d8da4; letter-spacing: .01em; }
+
+  body.theme-dark { --ink: #edf3ff; --muted: #96a8c2; --line: #293d5b; --paper: #07111f; --card: #111f35; --navy: #06101e; --navy-2: #132a49; --green: #6ee4b7; --green-soft: #143d35; --red: #ff9dad; --red-soft: #42232d; --amber: #e4b35c; --amber-soft: #3e301a; --blue: #a8b9ff; background: radial-gradient(circle at 84% -7%, rgba(55, 92, 159, .36), transparent 32%), radial-gradient(circle at 8% 4%, rgba(24, 109, 90, .2), transparent 28%), linear-gradient(135deg, #07111f, #09182b 58%, #071521); }
+
+  body.theme-dark .rail { border-right-color: rgba(133, 169, 218, .12); background: linear-gradient(180deg, #050e1b 0%, #09182b 54%, #0b2037 100%); box-shadow: 14px 0 48px rgba(0, 0, 0, .25); }
+
+  body.theme-dark h1 { background: linear-gradient(110deg, #f1f6ff 0%, #b8ccf1 53%, #76e4c2 110%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  body.theme-dark .toolbar { border-color: #2d415f; background: rgba(17, 31, 52, .78); box-shadow: 0 17px 40px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .05); }
+
+  body.theme-dark .select-wrap select, body.theme-dark .search { background: rgba(21, 38, 63, .84); border-color: #304560; }
+
+  body.theme-dark .select-wrap select:focus, body.theme-dark .search:focus-within { background: #1b304e; border-color: #668ac2; box-shadow: 0 0 0 4px rgba(102, 138, 194, .16); }
+
+  body.theme-dark .summary-card { border-color: #2c405e; background: linear-gradient(145deg, rgba(22, 39, 65, .98), rgba(13, 28, 49, .96)); box-shadow: 0 18px 38px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .05); }
+
+  body.theme-dark .summary-card:hover { box-shadow: 0 24px 44px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .06); }
+
+  body.theme-dark .summary-label, body.theme-dark .summary-foot { color: #9aaec9; }
+
+  body.theme-dark .summary-value { color: #f2f7ff; }
+
+  body.theme-dark .content-grid > .panel { border-color: #2c405e; box-shadow: 0 27px 65px rgba(0, 0, 0, .26), inset 0 1px 0 rgba(255, 255, 255, .04); }
+
+  body.theme-dark .leaders-side { background: linear-gradient(180deg, #111f35, #0d1b30); }
+
+  body.theme-dark .leader-column-head { color: #e4edfc; }
+
+  body.theme-dark .leader-column + .leader-column { border-left-color: #2c405e; }
+
+  body.theme-dark .leader-table th { background: linear-gradient(180deg, #1a2b47, #14243c); color: #91a5c0; border-bottom-color: #2c405e; }
+
+  body.theme-dark .leader-table td { color: #cfdaeb; }
+
+  body.theme-dark .leader-table tbody tr { border-bottom-color: #263954; }
+
+  body.theme-dark .leader-table tbody tr:hover { background: linear-gradient(90deg, rgba(31, 78, 73, .43), rgba(26, 52, 84, .58)); }
+
+  body.theme-dark .leader-table .leader-name { color: #eff5ff; }
+
+  body.theme-dark .leader-table .leader-score { color: #f2f7ff; }
+
+  body.theme-dark .access-cta { border-color: rgba(96, 132, 177, .54); background: linear-gradient(145deg, rgba(26, 48, 78, .98), rgba(15, 32, 56, .97) 58%, rgba(17, 59, 59, .95)); box-shadow: 0 35px 90px rgba(0, 0, 0, .48), 0 10px 25px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .07); }
+
+  body.theme-dark .sector-modal { border-color: #344b6d; background: #101f35; box-shadow: 0 35px 110px rgba(0, 0, 0, .55); }
+
+  body.theme-dark .sector-modal-head { background: linear-gradient(145deg, #1a2d4a, #12243c); }
+
+  body.theme-dark .sector-modal-title { color: #f0f5ff; }
+
+  body.theme-dark .sector-modal-columns { background: #162842; color: #9aaec9; }
+
+  body.theme-dark .sector-stock-row:hover { background: #172d4a; }
+
+  @media (max-width: 1120px) {
+    .rail { width: 220px; flex-basis: 220px; }
+    .main { padding-left: 28px; padding-right: 28px; }
+  }
+
+  @media (max-width: 760px) {
+    .rail { width: 100%; padding: 16px 14px 13px; }
+    .brand { padding-bottom: 16px; }
+    .main { padding: 24px 14px 40px; }
+    .topline { gap: 18px; margin-bottom: 22px; }
+    h1 { font-size: clamp(27px, 8vw, 34px); }
+    .top-actions { gap: 7px; }
+    .toolbar { margin-bottom: 17px; padding: 12px; }
+    .summary-grid { gap: 10px; }
+    .summary-card { min-height: 108px; padding: 15px; }
+    .summary-value { font-size: 27px; }
+    .content-grid > .panel { height: 820px; }
+  }
+
+  @media (max-width: 520px) {
+    .brand-mark { width: 36px; height: 36px; }
+    .brand-name { font-size: 16px; }
+    .nav button { padding: 11px 10px; }
+    .nifty-regime-card { max-width: 100%; }
+    .access-cta { width: calc(100% - 24px); padding: 21px 18px; }
+  }
 </style>
 
 </head>
@@ -1152,6 +1429,8 @@ top: 28%;
 <button type="button" data-scroll="sectorFlow"><span class="nav-icon">▥</span>SECTOR FLOW</button>
 
 <button type="button" data-view="volumeRatio"><span class="nav-icon">◷</span>VOLM RATIO</button>
+
+<button type="button" data-view="change"><span class="nav-icon">★</span>% CHANGE</button>
 
 </nav>
 
@@ -1180,6 +1459,22 @@ top: 28%;
 </div>
 
 <div class="top-actions">
+
+<div class="nifty-regime-card" id="niftyRegimeCard" data-regime="waiting" role="status" aria-live="polite" title="Waiting for live NIFTY 50 breadth and volume data">
+
+<span class="nifty-regime-orb"></span>
+
+<div class="nifty-regime-copy">
+
+<span class="nifty-regime-kicker">NIFTY 50 REGIME</span>
+
+<strong class="nifty-regime-label" id="niftyRegimeText">NIFTY REGIME WAITING</strong>
+
+<span class="nifty-regime-meta" id="niftyRegimeMeta">Waiting for live NIFTY 50 breadth and volume data</span>
+
+</div>
+
+</div>
 
 <span class="feed-chip" id="feedChip"><span class="feed-chip-dot"></span><span id="feedChipText">Offline</span></span>
 
@@ -1285,7 +1580,7 @@ top: 28%;
 
 <section class="leader-column gainers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers</h3><span id="gainersCount">0</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers by Score</h3><span class="leader-average" id="gainersAverage" title="Average volume ratio across all gainers in the selected universe">Avg Buy Volm —</span></div>
 
 <div class="leader-list" id="gainersList"></div>
 
@@ -1293,7 +1588,7 @@ top: 28%;
 
 <section class="leader-column losers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Losers</h3><span id="losersCount">0</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Losers by Score</h3><span class="leader-average" id="losersAverage" title="Average volume ratio across all losers in the selected universe">Avg Sell Volm —</span></div>
 
 <div class="leader-list" id="losersList"></div>
 
@@ -1403,6 +1698,72 @@ top: 28%;
 
 
 
+<div id="changeView" class="view-hidden">
+
+<section class="panel volume-ratio-panel change-panel" aria-label="Percentage change leaders">
+
+<div class="panel-head">
+
+<div>
+
+<h2 class="panel-title">% Change</h2>
+
+<p class="panel-caption">Highest gainers and lowest decliners by percentage change; top 15 on each side.</p>
+
+</div>
+
+<span class="flow-sort">Sorted by %CHG ↓</span>
+
+</div>
+
+<div class="leaders-grid volume-ratio-grid">
+
+<section class="leader-column gainers">
+
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top % Change Gainers</h3><span id="changeLeadersCount">0 / 15</span></div>
+
+<div class="leader-list score-list" id="changeLeadersList"></div>
+
+</section>
+
+<section class="leader-column losers">
+
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top % Change Decliners</h3><span id="changeDeclinesCount">0 / 15</span></div>
+
+<div class="leader-list score-list" id="changeDeclinesList"></div>
+
+</section>
+
+</div>
+
+<div class="access-cta">
+
+<a class="access-link" href="https://cosmofeed.com/vig/6a250fb87399a000136dec6b" target="_blank" rel="noopener noreferrer">
+
+<span class="access-link-lead">Click here</span>
+
+<span class="access-link-title">Join Our Private Telegram Group For Access</span>
+
+</a>
+
+<form class="access-form access-gate-form">
+
+<input class="access-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="Enter Your Registered Phone number" aria-label="Registered phone number" required>
+
+<button class="access-submit" type="submit">Continue to Dashboard</button>
+
+</form>
+
+<div class="access-error" hidden></div>
+
+</div>
+
+</section>
+
+</div>
+
+
+
 <section class="panel flow-panel view-hidden" id="sectorFlow" aria-label="Sector flow">
 
 <div class="flow-head">
@@ -1422,6 +1783,8 @@ top: 28%;
 <button class="active" type="button" data-flow-sort="mean">%CHG mean</button>
 
 <button type="button" data-flow-sort="volume_ratio_mean">VolmRatio</button>
+
+<button type="button" data-flow-sort="dirRScore">Score</button>
 
 </div>
 
@@ -1477,7 +1840,7 @@ top: 28%;
 
 <h2 class="sector-modal-title" id="sectorModalTitle">Sector constituents</h2>
 
-<div class="sector-modal-sub">Sorted by RFactor, highest first</div>
+<div class="sector-modal-sub">Sorted by Momentum, highest first</div>
 
 </div>
 
@@ -1485,7 +1848,7 @@ top: 28%;
 
 </div>
 
-<div class="sector-modal-columns"><span>Stock name</span><span>Vol ratio</span><span>RFactor</span></div>
+<div class="sector-modal-columns"><span>Stock name</span><span>Vol ratio</span><span>Momentum</span></div>
 
 <div class="sector-modal-rows" id="sectorModalRows"></div>
 
@@ -1503,7 +1866,7 @@ METAL: ["ADANIENT", "APLAPOLLO", "BHARATFORG", "COALINDIA", "HINDALCO", "HINDZIN
 
 REALTY: ["PHOENIXLTD", "GODREJPROP", "LODHA", "OBEROIRLTY", "DLF", "PRESTIGE", "NBCC", "RVNL"],
 
-ENERGY: ["RELIANCE", "ONGC", "IOC", "BPCL", "OIL", "NTPC", "POWERGRID", "POWERINDIA", "TATAPOWER", "JSWENERGY", "ADANIGREEN", "ADANIENSOL", "NHPC", "IREDA", "SUZLON", "INOXWIND", "WAAREEENER", "PREMIERENE", "PETRONET", "GAIL", "HINDPETRO"],
+ENERGY: ["RELIANCE", "ONGC", "IOC", "BPCL", "OIL", "NTPC", "POWERGRID", "POWERINDIA", "TATAPOWER", "JSWENERGY", "ADANIGREEN", "ADANIENSOL", "ADANIPOWER", "NHPC", "IREDA", "SUZLON", "INOXWIND", "WAAREEENER", "PREMIERENE", "PETRONET", "GAIL", "HINDPETRO"],
 
 AUTO: ["BOSCHLTD", "TIINDIA", "HEROMOTOCO", "M&M", "EICHERMOT", "BAJAJ-AUTO", "ASHOKLEY", "MARUTI", "TVSMOTOR", "MOTHERSON", "SONACOMS", "UNOMINDA", "TMPV", "HYUNDAI", "AMBER"],
 
@@ -1586,6 +1949,8 @@ currentRows: [],
 sectorFlow: null,
 
 ticks: null,
+
+niftyIndex: null,
 
 seedProgress: { done: 0, total: 0, errors: 0 },
 
@@ -1744,6 +2109,14 @@ return ranked;
 
 
 function formatNumber(number, digits = 1) { return Number(number).toFixed(digits); }
+
+function scoreMultiplier(number, showSign = false) {
+  const value = Number(number);
+  if (!Number.isFinite(value)) return "—";
+  const scaled = Math.round((value / 10) * 100) / 100;
+  const formatted = scaled.toFixed(2).replace(/\.?0+$/, "");
+  return `${showSign && scaled > 0 ? "+" : ""}${formatted}`;
+}
 
 function escapeHtml(value) { return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
 
@@ -2014,11 +2387,20 @@ submit.disabled = false;
 
 
 
-function renderMovers(allRows) {
+function renderMovers(allRows, universeRows = allRows) {
 
-const gainers = allRows.filter(row => Number(row.change) > 0).sort((a, b) => b.change - a.change).slice(0, 40);
+// Header averages use every qualifying row, not the visible top-40 leader slices.
+const buyUniverse = universeRows.filter(row => Number(row.change) > 0 && Number.isFinite(Number(row.ratio)));
 
-const losers = allRows.filter(row => Number(row.change) < 0).sort((a, b) => a.change - b.change).slice(0, 40);
+const sellUniverse = universeRows.filter(row => Number(row.change) < 0 && Number.isFinite(Number(row.ratio)));
+
+const averageRatio = rows => rows.length ? rows.reduce((sum, row) => sum + Number(row.ratio), 0) / rows.length : null;
+
+const scoreValue = row => Number.isFinite(Number(row.score)) ? Number(row.score) : Number(row.rfactor || 0);
+
+const gainers = allRows.filter(row => Number(row.change) > 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(b.change) - Number(a.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 40);
+
+const losers = allRows.filter(row => Number(row.change) < 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(a.change) - Number(b.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 40);
 
 const change = value => Number.isFinite(Number(value)) ? `${signed(Number(value), 1)}%` : "—";
 
@@ -2028,7 +2410,7 @@ const renderList = (rows, tone) => `<table class="leader-table">
 
 <colgroup><col style="width:31%"><col style="width:12%"><col style="width:19%"><col style="width:17%"><col style="width:11%"><col style="width:10%"></colgroup>
 
-<thead><tr><th>Name</th><th>Rank</th><th>LTP %</th><th>Vol ratio</th><th>C RSI</th><th>ADX</th></tr></thead>
+<thead><tr><th>Name</th><th>Momentum</th><th>LTP %</th><th>Vol ratio</th><th>C RSI</th><th>ADX</th></tr></thead>
 
 <tbody>
 
@@ -2064,7 +2446,7 @@ return `<tr data-tradingview-symbol="${escapeHtml(row.symbol)}" tabindex="0" rol
 
 </td>
 
-<td class="leader-rank">${index + 1}</td>
+<td class="leader-score">${scoreMultiplier(scoreValue(row))}</td>
 
 <td class="leader-ltp ${tone}">${change(row.change)}</td>
 
@@ -2088,9 +2470,375 @@ document.getElementById("gainersList").innerHTML = renderList(gainers, "positive
 
 document.getElementById("losersList").innerHTML = renderList(losers, "negative");
 
-document.getElementById("gainersCount").textContent = gainers.length;
+const averageBuy = averageRatio(buyUniverse);
 
-document.getElementById("losersCount").textContent = losers.length;
+const averageSell = averageRatio(sellUniverse);
+
+document.getElementById("gainersAverage").textContent = averageBuy === null ? "Avg Buy Volm —" : `Avg Buy Volm ${formatNumber(averageBuy, 2)}×`;
+
+document.getElementById("losersAverage").textContent = averageSell === null ? "Avg Sell Volm —" : `Avg Sell Volm ${formatNumber(averageSell, 2)}×`;
+
+}
+
+
+
+const NIFTY_REGIME_STORAGE_KEY = "niftyRegimeState";
+
+let niftyRegimeMemory = (() => {
+
+try {
+
+const stored = JSON.parse(sessionStorage.getItem(NIFTY_REGIME_STORAGE_KEY) || "null");
+
+return stored && stored.session === niftySessionDate() ? stored : null;
+
+} catch (error) {
+
+return null;
+
+}
+
+})();
+
+
+
+function niftySessionDate() {
+
+return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+
+}
+
+
+
+function setNiftyRegimeWaiting(message = "Waiting for live NIFTY 50 breadth and volume data") {
+
+const card = document.getElementById("niftyRegimeCard");
+
+card.dataset.regime = "waiting";
+
+document.getElementById("niftyRegimeText").textContent = "NIFTY REGIME WAITING";
+
+document.getElementById("niftyRegimeMeta").textContent = message;
+
+card.title = message;
+
+}
+
+
+
+function niftySnapshot(allRows) {
+
+const indexRow = allRows.find(row => ["NIFTY 50", "NIFTY50"].includes(String(row.symbol)));
+
+if (state.universe === "index" && indexRow) {
+
+const change = Number.isFinite(Number(state.niftyIndex?.change)) ? Number(state.niftyIndex.change) : Number(indexRow.change);
+
+const ratio = Number(indexRow.ratio);
+
+const score = Number(indexRow.score);
+
+if (!Number.isFinite(change)) return null;
+
+return {
+
+change,
+
+ratio,
+
+score,
+
+breadth: null,
+
+vwapBreadth: null,
+
+emaBreadth: null,
+
+sectorBreadth: null,
+
+up: null,
+
+down: null,
+
+total: null,
+
+buyRatio: null,
+
+sellRatio: null,
+
+leadership: null,
+
+vwapGap: Number(indexRow.vwapGap),
+
+emaTrend5: Number(indexRow.emaTrend5),
+
+emaTrend15: Number(indexRow.emaTrend15)
+
+};
+
+}
+
+const symbols = new Set(SECTOR_DEFINITIONS.NIFTY_50 || []);
+
+const rows = allRows.filter(row => symbols.has(String(row.symbol)) && Number.isFinite(Number(row.change)) && Number.isFinite(Number(row.ratio)));
+
+if (!rows.length) return null;
+
+const mean = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+
+const changes = rows.map(row => Number(row.change));
+
+const upRows = rows.filter(row => Number(row.change) > 0);
+
+const downRows = rows.filter(row => Number(row.change) < 0);
+
+const buyRatios = upRows.map(row => Number(row.ratio));
+
+const sellRatios = downRows.map(row => Number(row.ratio));
+
+const scores = rows.map(row => Number(row.score)).filter(Number.isFinite);
+
+const meanFinite = key => mean(rows.map(row => Number(row[key])).filter(Number.isFinite));
+
+const vwapRows = rows.filter(row => Number.isFinite(Number(row.vwapGap)));
+
+const vwapUp = vwapRows.filter(row => Number(row.vwapGap) > 0).length;
+
+const vwapDown = vwapRows.filter(row => Number(row.vwapGap) < 0).length;
+
+const emaRows = rows.filter(row => Number.isFinite(Number(row.emaTrend5)) && Number.isFinite(Number(row.emaTrend15)));
+
+const emaUp = emaRows.filter(row => Number(row.emaTrend5) > 0 && Number(row.emaTrend15) > 0).length;
+
+const emaDown = emaRows.filter(row => Number(row.emaTrend5) < 0 && Number(row.emaTrend15) < 0).length;
+
+const sectorGroups = new Map();
+
+rows.forEach(row => {
+
+const sector = String(row.sector || "UNKNOWN");
+
+const values = sectorGroups.get(sector) || [];
+
+values.push(Number(row.change));
+
+sectorGroups.set(sector, values);
+
+});
+
+const sectorMeans = [...sectorGroups.values()].map(values => mean(values)).filter(Number.isFinite);
+
+const sectorsUp = sectorMeans.filter(value => value > 0).length;
+
+const sectorsDown = sectorMeans.filter(value => value < 0).length;
+
+const buyRatio = mean(buyRatios);
+
+const sellRatio = mean(sellRatios);
+
+return {
+
+change: Number.isFinite(Number(state.niftyIndex?.change)) ? Number(state.niftyIndex.change) : mean(changes),
+
+ratio: mean(rows.map(row => Number(row.ratio))),
+
+score: mean(scores),
+
+breadth: (upRows.length - downRows.length) / rows.length,
+
+vwapBreadth: vwapRows.length ? (vwapUp - vwapDown) / vwapRows.length : null,
+
+emaBreadth: emaRows.length ? (emaUp - emaDown) / emaRows.length : null,
+
+sectorBreadth: sectorMeans.length ? (sectorsUp - sectorsDown) / sectorMeans.length : null,
+
+up: upRows.length,
+
+down: downRows.length,
+
+total: rows.length,
+
+buyRatio,
+
+sellRatio,
+
+leadership: Number.isFinite(buyRatio) && Number.isFinite(sellRatio) ? buyRatio - sellRatio : null,
+
+vwapGap: meanFinite("vwapGap"),
+
+emaTrend5: meanFinite("emaTrend5"),
+
+emaTrend15: meanFinite("emaTrend15")
+
+};
+
+}
+
+
+
+function classifyNifty(snapshot, previousSnapshot, previousBias) {
+
+let bullishVotes = 0;
+
+let bearishVotes = 0;
+
+if (snapshot.change > 0.05) bullishVotes += 1;
+
+if (snapshot.change < -0.05) bearishVotes += 1;
+
+if (Number.isFinite(snapshot.breadth)) {
+
+if (snapshot.breadth >= 0.10) bullishVotes += 1;
+
+if (snapshot.breadth <= -0.10) bearishVotes += 1;
+
+}
+
+if (Number.isFinite(snapshot.vwapBreadth)) {
+
+if (snapshot.vwapBreadth >= 0.10) bullishVotes += 1;
+
+if (snapshot.vwapBreadth <= -0.10) bearishVotes += 1;
+
+}
+
+if (Number.isFinite(snapshot.emaBreadth)) {
+
+if (snapshot.emaBreadth >= 0.10) bullishVotes += 1;
+
+if (snapshot.emaBreadth <= -0.10) bearishVotes += 1;
+
+}
+
+if (Number.isFinite(snapshot.sectorBreadth)) {
+
+if (snapshot.sectorBreadth >= 0.20) bullishVotes += 1;
+
+if (snapshot.sectorBreadth <= -0.20) bearishVotes += 1;
+
+}
+
+if (Number.isFinite(snapshot.buyRatio) && Number.isFinite(snapshot.sellRatio)) {
+
+if (snapshot.buyRatio > snapshot.sellRatio + 0.05) bullishVotes += 1;
+
+if (snapshot.sellRatio > snapshot.buyRatio + 0.05) bearishVotes += 1;
+
+}
+
+if (Number.isFinite(snapshot.leadership)) {
+
+if (snapshot.leadership >= 0.05) bullishVotes += 1;
+
+if (snapshot.leadership <= -0.05) bearishVotes += 1;
+
+}
+
+if (previousSnapshot && Number.isFinite(previousSnapshot.change)) {
+
+if (snapshot.change > previousSnapshot.change + 0.03) bullishVotes += 1;
+
+if (snapshot.change < previousSnapshot.change - 0.03) bearishVotes += 1;
+
+}
+
+if (previousSnapshot && Number.isFinite(previousSnapshot.leadership) && Number.isFinite(snapshot.leadership)) {
+
+if (snapshot.leadership > previousSnapshot.leadership + 0.05) bullishVotes += 1;
+
+if (snapshot.leadership < previousSnapshot.leadership - 0.05) bearishVotes += 1;
+
+}
+
+const confidence = Math.min(100, Math.round(Math.max(bullishVotes, bearishVotes) / 9 * 100));
+
+const bias = bullishVotes > bearishVotes ? "bullish" : bearishVotes > bullishVotes ? "bearish" : previousBias || (snapshot.change >= 0 ? "bullish" : "bearish");
+
+return { bias, confidence, bullishVotes, bearishVotes };
+
+}
+
+
+
+function updateNiftyRegime(allRows) {
+
+if (!state.liveRows) {
+
+setNiftyRegimeWaiting();
+
+return;
+
+}
+
+const snapshot = niftySnapshot(allRows);
+
+if (!snapshot) {
+
+setNiftyRegimeWaiting(state.universe === "stocks" && state.sector !== "all" && state.sector !== "NIFTY_50" ? "Select All sectors or NIFTY 50 to calculate the regime" : "NIFTY 50 data is still loading");
+
+return;
+
+}
+
+const fingerprint = [state.niftyIndex?.change, snapshot.change, snapshot.ratio, snapshot.breadth, snapshot.vwapBreadth, snapshot.emaBreadth, snapshot.sectorBreadth, snapshot.leadership, snapshot.score].map(value => Number.isFinite(Number(value)) ? Number(value).toFixed(3) : "na").join("|");
+
+const session = niftySessionDate();
+
+if (!niftyRegimeMemory || niftyRegimeMemory.session !== session || niftyRegimeMemory.fingerprint !== fingerprint) {
+
+const candidate = classifyNifty(snapshot, niftyRegimeMemory?.snapshot, niftyRegimeMemory?.bias);
+
+const candidateCount = niftyRegimeMemory?.candidate === candidate.bias ? Number(niftyRegimeMemory.candidateCount || 0) + 1 : 1;
+
+const previousBias = niftyRegimeMemory?.bias;
+
+const confirmed = !previousBias || candidate.bias === previousBias || candidateCount >= 2;
+
+const bias = confirmed ? candidate.bias : previousBias;
+
+const display = confirmed && previousBias && previousBias !== bias ? `turning-${bias}` : bias;
+
+niftyRegimeMemory = { session, fingerprint, bias, display, snapshot, candidate: candidate.bias, candidateCount, confidence: candidate.confidence };
+
+try { sessionStorage.setItem(NIFTY_REGIME_STORAGE_KEY, JSON.stringify(niftyRegimeMemory)); } catch (error) { /* Storage is optional. */ }
+
+}
+
+const labels = {
+
+bullish: "NIFTY BULLISH",
+
+bearish: "NIFTY BEARISH",
+
+"turning-bullish": "NIFTY TURNING BULLISH FROM BEARISH",
+
+"turning-bearish": "NIFTY TURNING BEARISH FROM BULLISH"
+
+};
+
+const card = document.getElementById("niftyRegimeCard");
+
+card.dataset.regime = niftyRegimeMemory.display;
+
+document.getElementById("niftyRegimeText").textContent = labels[niftyRegimeMemory.display];
+
+const meta = [`${signed(snapshot.change, 2)}%`];
+
+if (snapshot.total) meta.push(`${Math.round(snapshot.up / snapshot.total * 100)}% advancing`);
+
+if (Number.isFinite(snapshot.buyRatio) && Number.isFinite(snapshot.sellRatio)) meta.push(`Buy ${formatNumber(snapshot.buyRatio, 2)}× · Sell ${formatNumber(snapshot.sellRatio, 2)}×`);
+
+else if (Number.isFinite(snapshot.ratio)) meta.push(`Vol ${formatNumber(snapshot.ratio, 2)}×`);
+
+if (Number.isFinite(snapshot.vwapBreadth)) meta.push(`VWAP breadth ${signed(snapshot.vwapBreadth * 100, 0)}%`);
+
+if (Number.isFinite(snapshot.emaTrend5) && Number.isFinite(snapshot.emaTrend15)) meta.push(`Trend ${signed(snapshot.emaTrend5, 2)} / ${signed(snapshot.emaTrend15, 2)}`);
+
+meta.push(`Confidence ${niftyRegimeMemory.confidence}%`);
+
+document.getElementById("niftyRegimeMeta").textContent = meta.join(" · ");
+
+card.title = meta.join(" · ");
 
 }
 
@@ -2164,6 +2912,62 @@ document.getElementById("volumeDeclinesCount").textContent = `${declines.length}
 
 
 
+function renderChange(allRows) {
+
+const scored = allRows.filter(row => Number.isFinite(Number(row.score)) || Number.isFinite(Number(row.rfactor)));
+
+const scoreValue = row => Number.isFinite(Number(row.score)) ? Number(row.score) : Number(row.rfactor || 0);
+
+const leaders = scored.filter(row => Number(row.change) > 0).sort((a, b) => Number(b.change) - Number(a.change) || scoreValue(b) - scoreValue(a) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 15);
+
+const declines = scored.filter(row => Number(row.change) < 0).sort((a, b) => Number(a.change) - Number(b.change) || scoreValue(b) - scoreValue(a) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 15);
+
+const renderList = (items, tone) => items.length ? `<table class="leader-table score-table">
+
+<colgroup><col style="width:46%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
+
+<thead><tr><th>Stock</th><th>% Change</th><th>Momentum</th><th>Vol ratio</th></tr></thead>
+
+<tbody>
+
+${items.map(row => {
+
+const chip = row.symbol.replace(/[^A-Z]/g, "").slice(0, 2) || "•";
+
+const sector = String(row.sector || "").replaceAll("_", " ");
+
+const change = Number.isFinite(Number(row.change)) ? signed(Number(row.change), 1) + "%" : "—";
+
+return `<tr data-tradingview-symbol="${escapeHtml(row.symbol)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(row.display)} on TradingView">
+
+<td><div class="leader-stock"><div class="leader-chip ${tone}">${escapeHtml(chip)}</div><div class="leader-copy"><div class="leader-name" title="${escapeHtml(row.display)}">${escapeHtml(row.display)}</div><div class="leader-sector">${escapeHtml(sector)}</div></div></div></td>
+
+<td class="leader-ltp ${tone}">${change}</td>
+
+<td class="leader-score">${scoreMultiplier(scoreValue(row))}</td>
+
+<td class="leader-ratio ${Number(row.ratio) >= 1 ? "ratio-high" : "ratio-low"}">${formatNumber(row.ratio, 2)}×</td>
+
+</tr>`;
+
+}).join("")}
+
+</tbody>
+
+</table>` : '<div class="empty">% Change data is waiting for data.</div>';
+
+document.getElementById("changeLeadersList").innerHTML = renderList(leaders, "positive");
+
+document.getElementById("changeDeclinesList").innerHTML = renderList(declines, "negative");
+
+document.getElementById("changeLeadersCount").textContent = `${leaders.length} / 15`;
+
+document.getElementById("changeDeclinesCount").textContent = `${declines.length} / 15`;
+
+}
+
+
+
 function getFilteredRows(allRows) {
 
 return allRows.filter(row => {
@@ -2222,7 +3026,7 @@ const grouped = new Map();
 
 if (state.universe === "index") {
 
- allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, sumRatio: Number(row.ratio) || 0, count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
+ allRows.forEach(row => grouped.set(row.symbol, { rows: [row], sum: Number(row.change) || 0, sumRatio: Number(row.ratio) || 0, sumDirScore: (row.direction > 0 ? 1 : -1) * (Number(row.score) || 0), count: 1, up: row.change >= 0 ? 1 : 0, down: row.change < 0 ? 1 : 0 }));
 
 } else {
 
@@ -2244,6 +3048,8 @@ rows,
 
  sumRatio: rows.reduce((sum, row) => sum + (Number(row.ratio) || 0), 0),
 
+ sumDirScore: rows.reduce((sum, row) => sum + (row.direction > 0 ? 1 : -1) * (Number(row.score) || 0), 0),
+
 count: rows.length,
 
 up: rows.filter(row => row.change >= 0).length,
@@ -2258,7 +3064,7 @@ down: rows.filter(row => row.change < 0).length
 
 items = [...grouped.entries()]
 
- .map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1), volume_ratio_mean: group.sumRatio / Math.max(group.count, 1) }));
+ .map(([name, group]) => ({ name, ...group, mean: group.sum / Math.max(group.count, 1), volume_ratio_mean: group.sumRatio / Math.max(group.count, 1), dirRScore: group.sumDirScore / Math.max(group.count, 1) }));
 
 }
 
@@ -2271,6 +3077,8 @@ return item[state.sectorSort] == null || !Number.isFinite(value) ? -Infinity : v
 };
 
 const isVolumeSort = state.sectorSort === "volume_ratio_mean";
+
+const isScoreSort = state.sectorSort === "dirRScore";
 
 if (isVolumeSort) {
 
@@ -2312,6 +3120,8 @@ return;
 
 const metricDelta = item => {
 
+if (isScoreSort) return Number(item.dirRScore) || 0;
+
 if (!isVolumeSort) return Number(item.mean) || 0;
 
 const ratio = sortValue(item);
@@ -2328,7 +3138,7 @@ const negativeMax = Math.max(...deltas.filter(value => value < 0).map(value => M
 
 const isGreenPressure = item => {
 
-const mean = Number(item.mean);
+const mean = isScoreSort ? Number(item.dirRScore) : Number(item.mean);
 
 return !Number.isFinite(mean) || mean >= 0;
 
@@ -2338,13 +3148,13 @@ const greenFlowTotal = isVolumeSort
 
 ? items.filter(isGreenPressure).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
 
-: items.reduce((sum, item) => sum + Math.max(0, Number(item.mean) || 0), 0);
+: items.reduce((sum, item) => sum + Math.max(0, metricDelta(item)), 0);
 
 const redFlowTotal = isVolumeSort
 
 ? items.filter(item => !isGreenPressure(item)).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
 
- : items.reduce((sum, item) => sum + Math.max(0, -(Number(item.mean) || 0)), 0);
+  : items.reduce((sum, item) => sum + Math.max(0, -metricDelta(item)), 0);
 
 const flowTotal = greenFlowTotal + redFlowTotal;
 
@@ -2384,13 +3194,17 @@ document.getElementById("sectorFlowCaption").textContent = isVolumeSort
 
 ? "Auto flow spacing favors the side with more total VolmRatio · bar height = raw VolmRatio mean · color = %CHG mean"
 
+: isScoreSort
+
+? "Auto flow spacing favors the side with more total directional Score · bar height = dirRScore · color = bullish or bearish Score"
+
 : "Auto flow spacing favors the side with more total %CHG mean · bar height = %CHG mean";
 
 container.innerHTML = items.map(item => {
 
 const ratio = sortValue(item);
 
-const hasMetric = !isVolumeSort || Number.isFinite(ratio);
+const hasMetric = (!isVolumeSort && !isScoreSort) || Number.isFinite(ratio);
 
 const delta = metricDelta(item);
 
@@ -2402,7 +3216,7 @@ const pressure = isVolumeSort
 
 ? (meanValue < 0 ? "sell" : "buy")
 
-: (positive ? "positive" : "negative");
+: (positive ? (isScoreSort ? "buy" : "positive") : (isScoreSort ? "sell" : "negative"));
 
 const volumeSide = isVolumeSort ? (pressure === "buy" ? "positive" : "negative") : (positive ? "positive" : "negative");
 
@@ -2412,17 +3226,17 @@ const height = hasMetric
 
 : 8;
 
-const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : `${signed(item.mean)}%`;
+const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : isScoreSort ? (hasMetric ? scoreMultiplier(ratio, true) : "—") : `${signed(item.mean)}%`;
 
 const pressureLabel = pressure === "buy" ? "BUY" : "SELL";
 
 const changeValue = Number.isFinite(meanValue) ? signed(meanValue, 2) + "%" : "—";
 
-const nameMetric = isVolumeSort ? `<span class="flow-name-metric ${pressure}">${value}</span>` : "";
+const nameMetric = isVolumeSort || isScoreSort ? `<span class="flow-name-metric ${pressure}">${value}</span>` : "";
 
-const footerValue = isVolumeSort ? "" : `<div class="flow-value ${positive ? "positive" : "negative"}">${value}</div>`;
+const footerValue = isVolumeSort || isScoreSort ? "" : `<div class="flow-value ${positive ? "positive" : "negative"}">${value}</div>`;
 
-const rowTitle = isVolumeSort ? `${item.name.replaceAll("_", " ")} · ${pressureLabel} · VolmRatio ${value} · %CHG ${changeValue}` : item.name.replaceAll("_", " ");
+const rowTitle = isVolumeSort ? `${item.name.replaceAll("_", " ")} · ${pressureLabel} · VolmRatio ${value} · %CHG ${changeValue}` : isScoreSort ? `${item.name.replaceAll("_", " ")} · ${pressureLabel} · dirRScore ${value} · %CHG ${changeValue}` : item.name.replaceAll("_", " ");
 
 return `<div class="flow-row" data-sector="${item.name}" title="${escapeHtml(rowTitle)}">
 
@@ -2472,7 +3286,7 @@ rows = (SECTOR_DEFINITIONS[sector] || []).map(symbol => bySymbol.get(symbol)).fi
 
 }
 
-rows.sort((a, b) => Number(b.rfactor ?? 0) - Number(a.rfactor ?? 0));
+rows.sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0));
 
 const modal = document.getElementById("sectorModal");
 
@@ -2480,7 +3294,7 @@ document.getElementById("sectorModalTitle").textContent = sector.replaceAll("_",
 
 document.getElementById("sectorModalRows").innerHTML = rows.length
 
-? rows.map(row => `<div class="sector-stock-row" data-tradingview-symbol="${escapeHtml(row.symbol)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(row.display)} on TradingView"><div class="sector-stock-name"><span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${escapeHtml(row.display)}</div><div class="sector-modal-ratio">${Number.isFinite(Number(row.ratio)) ? formatNumber(Number(row.ratio), 2) + "×" : "—"}</div><div class="sector-stock-rfactor">${formatNumber(Number(row.rfactor ?? 0), 2)}</div></div>`).join("")
+? rows.map(row => `<div class="sector-stock-row" data-tradingview-symbol="${escapeHtml(row.symbol)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(row.display)} on TradingView"><div class="sector-stock-name"><span class="sector-stock-dot ${row.direction > 0 ? "positive" : "negative"}"></span>${escapeHtml(row.display)}</div><div class="sector-modal-ratio">${Number.isFinite(Number(row.ratio)) ? formatNumber(Number(row.ratio), 2) + "×" : "—"}</div><div class="sector-stock-score">${scoreMultiplier(Number(row.score ?? 0))}</div></div>`).join("")
 
 : '<div class="sector-modal-empty">No constituent data is available yet.</div>';
 
@@ -2514,13 +3328,17 @@ const flow = view === "flow";
 
 const volume = view === "volumeRatio";
 
-document.getElementById("momentumView").classList.toggle("view-hidden", flow || volume);
+const percentChange = view === "change";
+
+document.getElementById("momentumView").classList.toggle("view-hidden", flow || volume || percentChange);
 
 document.getElementById("sectorFlow").classList.toggle("view-hidden", !flow);
 
 document.getElementById("volumeRatioView").classList.toggle("view-hidden", !volume);
 
-document.getElementById("pageTitle").textContent = flow ? "Sector flow" : volume ? "Volm Ratio" : "Intraday Momentum Scanner";
+document.getElementById("changeView").classList.toggle("view-hidden", !percentChange);
+
+document.getElementById("pageTitle").textContent = flow ? "Sector flow" : volume ? "Volm Ratio" : percentChange ? "% Change" : "Intraday Momentum Scanner";
 
 document.getElementById("pageSubhead").textContent = flow
 
@@ -2530,11 +3348,15 @@ document.getElementById("pageSubhead").textContent = flow
 
 ? "Compare the highest and lowest volume ratios across the watched stocks."
 
-: "Review the strongest movers now by participation, trend strength, and momentum.";
+ : percentChange
+
+? "Compare the highest gainers and lowest decliners by percentage change."
+
+: "Review the strongest movers now by composite Score, participation, trend strength, and momentum.";
 
 document.querySelectorAll(".nav button").forEach(item =>
 
-item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : volume ? item.dataset.view === "volumeRatio" : item.textContent.toLowerCase().includes("momentum"))
+item.classList.toggle("active", flow ? item.dataset.scroll === "sectorFlow" : volume ? item.dataset.view === "volumeRatio" : percentChange ? item.dataset.view === "change" : item.textContent.toLowerCase().includes("momentum"))
 
 );
 
@@ -2549,6 +3371,8 @@ function render() {
 const allRows = state.liveRows ? state.liveRows : rankRows(buildRows());
 
 state.currentRows = allRows;
+
+updateNiftyRegime(allRows);
 
 
 
@@ -2624,9 +3448,11 @@ document.getElementById("modeNote").textContent = state.fastMode
 
 renderSectorFlow(allRows);
 
-renderMovers(filtered);
+renderMovers(filtered, allRows);
 
 renderVolumeRatio(allRows);
+
+renderChange(allRows);
 
 }
 
@@ -2678,7 +3504,8 @@ universe: state.universe,
 
 sector: state.sector,
 
-limit: "250",
+ // Request the full configured universe so averages cannot be truncated before rendering.
+ limit: "2000",
 
 _: Date.now()
 
@@ -2747,6 +3574,8 @@ if (typeof payload.fast_mode === "boolean") state.fastMode = payload.fast_mode;
 if (Number.isFinite(Number(payload.universe_size))) state.universeSize = Number(payload.universe_size);
 
 if (Number.isFinite(Number(payload.detail_symbols))) state.detailSymbols = Number(payload.detail_symbols);
+
+state.niftyIndex = payload.nifty_index && Number.isFinite(Number(payload.nifty_index.change)) ? payload.nifty_index : null;
 
 
 
@@ -2975,6 +3804,12 @@ showToast("Momentum scanner selected");
 setView("volumeRatio");
 
 showToast("Volm Ratio selected");
+
+} else if (button.dataset.view === "change") {
+
+setView("change");
+
+showToast("% Change selected");
 
 } else {
 

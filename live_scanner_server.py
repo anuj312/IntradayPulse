@@ -110,6 +110,8 @@ if Compress is not None:
 kite: Optional[KiteConnect] = None
 SYMBOL_TO_TOKEN: Dict[str, int] = {}
 TOKEN_TO_SYMBOL: Dict[int, str] = {}
+INDEX_TO_TOKEN: Dict[str, int] = {}
+INDEX_TOKEN_TO_SYMBOL: Dict[int, str] = {}
 
 TICK_STATE: Dict[int, Dict[str, Any]] = {}
 PRICE_HISTORY: Dict[int, deque] = {}
@@ -275,6 +277,24 @@ def _feed_status() -> tuple[str, bool]:
     return "waiting_for_ticks", False
 
 
+def _official_nifty_quote() -> Optional[dict]:
+    """Return the live NIFTY 50 quote when Kite exposes the NSE index token."""
+    with DATA_LOCK:
+        token = INDEX_TO_TOKEN.get("NIFTY 50")
+        tick = dict(TICK_STATE.get(token) or {}) if token else {}
+    ltp = _as_float(tick.get("ltp"))
+    ohlc = tick.get("ohlc") if isinstance(tick.get("ohlc"), dict) else {}
+    open_price = _as_float(ohlc.get("open"))
+    if not ltp or not open_price:
+        return None
+    return {
+        "symbol": "NIFTY 50",
+        "ltp": round(ltp, 2),
+        "change": round((ltp - open_price) / (open_price + 1e-9) * 100.0, 2),
+        "updated_at": datetime.fromtimestamp(float(tick.get("ts") or 0.0), IST).isoformat() if tick.get("ts") else None,
+    }
+
+
 # ----------------------------
 # Numeric helpers
 # ----------------------------
@@ -401,17 +421,26 @@ def load_instruments() -> None:
     if frame.empty or "tradingsymbol" not in frame.columns:
         raise RuntimeError("Kite returned no NSE instruments")
 
-    frame = frame[frame["tradingsymbol"].isin(ALL_SYMBOLS)].copy()
+    stock_frame = frame[frame["tradingsymbol"].isin(ALL_SYMBOLS)].copy()
+    index_frame = frame[frame["tradingsymbol"].isin({"NIFTY 50", "NIFTY50"})].copy()
 
     with DATA_LOCK:
         SYMBOL_TO_TOKEN.clear()
         TOKEN_TO_SYMBOL.clear()
-        for row in frame.itertuples(index=False):
+        INDEX_TO_TOKEN.clear()
+        INDEX_TOKEN_TO_SYMBOL.clear()
+        for row in stock_frame.itertuples(index=False):
             SYMBOL_TO_TOKEN[str(row.tradingsymbol)] = int(row.instrument_token)
             TOKEN_TO_SYMBOL[int(row.instrument_token)] = str(row.tradingsymbol)
+        for row in index_frame.itertuples(index=False):
+            name = "NIFTY 50" if str(row.tradingsymbol) in {"NIFTY 50", "NIFTY50"} else None
+            if name and name not in INDEX_TO_TOKEN:
+                INDEX_TO_TOKEN[name] = int(row.instrument_token)
+                INDEX_TOKEN_TO_SYMBOL[int(row.instrument_token)] = name
 
     missing = sorted(set(ALL_SYMBOLS) - set(SYMBOL_TO_TOKEN))
     log.info("Loaded %s/%s NSE symbols", len(SYMBOL_TO_TOKEN), len(ALL_SYMBOLS))
+    log.info("Loaded official index quotes: %s", ", ".join(sorted(INDEX_TO_TOKEN)) or "none")
     if missing:
         log.warning("Symbols missing in Kite NSE instruments: %s", ", ".join(missing))
 
@@ -440,7 +469,7 @@ def _update_tick(tick: dict) -> None:
 def _set_ticker_modes(selected_symbols: set[str]) -> None:
     with DATA_LOCK:
         ticker_ws = TICKER_WS
-        all_tokens = sorted(TOKEN_TO_SYMBOL)
+        all_tokens = sorted(set(TOKEN_TO_SYMBOL) | set(INDEX_TOKEN_TO_SYMBOL))
         selected_tokens = [SYMBOL_TO_TOKEN[symbol] for symbol in selected_symbols if symbol in SYMBOL_TO_TOKEN]
     if not ticker_ws:
         return
@@ -458,7 +487,7 @@ def _start_ticker() -> None:
         return
 
     TICKER_STARTED = True
-    tokens = sorted(TOKEN_TO_SYMBOL)
+    tokens = sorted(set(TOKEN_TO_SYMBOL) | set(INDEX_TOKEN_TO_SYMBOL))
 
     def run() -> None:
         global TICKER_CONNECTED, TICKER_WS, LAST_TICK_TS, TOTAL_TICKS
@@ -897,6 +926,110 @@ def _volume_ratio(token: int, timeframe: str, volume: float, now: datetime) -> f
     return max(0.0, volume / (expected + 1e-9))
 
 
+def _trend_features(frame: pd.DataFrame, ltp: float, now: datetime) -> dict:
+    """Return session VWAP and 5m/15m EMA alignment for regime detection."""
+    empty = {"vwapGap": None, "emaTrend5": None, "emaTrend15": None}
+    if frame.empty or "date" not in frame:
+        return empty
+
+    current = frame[frame["date"].dt.date == now.date()].copy()
+    if current.empty:
+        latest_date = frame["date"].dt.date.max()
+        current = frame[frame["date"].dt.date == latest_date].copy()
+    if current.empty:
+        return empty
+
+    current = current.sort_values("date")
+    closes = pd.to_numeric(current["close"], errors="coerce").dropna().astype(float)
+    if closes.empty or not ltp:
+        return empty
+    closes.iloc[-1] = float(ltp)
+
+    ema_fast = _ema(closes, 9)
+    ema_slow = _ema(closes, 21)
+    trend5 = ((ema_fast - ema_slow) / ltp * 100.0) if ema_fast is not None and ema_slow is not None else None
+
+    buckets = current.assign(_bucket=current["date"].dt.floor("15min")).groupby("_bucket", sort=True)["close"].last()
+    buckets = pd.to_numeric(buckets, errors="coerce").dropna().astype(float)
+    if not buckets.empty:
+        buckets.iloc[-1] = float(ltp)
+    ema15_fast = _ema(buckets, 3) if len(buckets) >= 2 else None
+    ema15_slow = _ema(buckets, 8) if len(buckets) >= 2 else None
+    trend15 = ((ema15_fast - ema15_slow) / ltp * 100.0) if ema15_fast is not None and ema15_slow is not None else None
+
+    volume = pd.to_numeric(current["volume"], errors="coerce").fillna(0.0).clip(lower=0.0)
+    typical = (pd.to_numeric(current["high"], errors="coerce") + pd.to_numeric(current["low"], errors="coerce") + pd.to_numeric(current["close"], errors="coerce")) / 3.0
+    total_volume = float(volume.sum())
+    vwap = float((typical * volume).sum() / total_volume) if total_volume > 0 else None
+    vwap_gap = ((ltp - vwap) / vwap * 100.0) if vwap and vwap > 0 else None
+
+    return {"vwapGap": vwap_gap, "emaTrend5": trend5, "emaTrend15": trend15}
+
+
+def _clip(value: float, low: float = 0.0, high: float = 1.0) -> float:
+    return max(low, min(high, float(value)))
+
+
+def _daily_atr_percent(token: int) -> float:
+    """Return a prior-session daily ATR percentage without using today's candle."""
+    with DATA_LOCK:
+        daily = HISTORY.get(token, {}).get("regular")
+    if daily is None or daily.empty:
+        return 1.0
+
+    stats = daily[daily["volume"] > 0].copy()
+    if "date" in stats:
+        stats = stats[stats["date"].dt.date < datetime.now(IST).date()]
+    if stats.empty:
+        return 1.0
+
+    previous_close = stats["close"].shift(1)
+    true_range = pd.concat(
+        [stats["high"] - stats["low"], (stats["high"] - previous_close).abs(), (stats["low"] - previous_close).abs()],
+        axis=1,
+    ).max(axis=1)
+    atr_percent = (true_range / stats["close"].replace(0, pd.NA) * 100.0).dropna().tail(20)
+    value = float(atr_percent.mean()) if not atr_percent.empty else 1.0
+    return value if math.isfinite(value) and value > 0 else 1.0
+
+
+def _intraday_volume_ratio(frame: pd.DataFrame, volume: float, now: datetime) -> float:
+    """Compare cumulative volume with the same 5-minute slot on prior sessions."""
+    if frame.empty or "date" not in frame or "volume" not in frame:
+        return 1.0
+
+    intraday = frame[frame["volume"] > 0].copy()
+    if intraday.empty:
+        return 1.0
+
+    sessions = {day: group.sort_values("date") for day, group in intraday.groupby(intraday["date"].dt.date)}
+    if not sessions:
+        return 1.0
+
+    live_session = market_is_open(now) and _has_current_session_data(now)
+    if live_session:
+        reference_date = now.date()
+        slot = int(max(0, (now - now.replace(hour=9, minute=15, second=0, microsecond=0)).total_seconds()) // 300) + 1
+        slot = max(1, min(75, slot))
+    else:
+        reference_date = max(sessions)
+        slot = len(sessions[reference_date])
+
+    baselines = []
+    for day in sorted(day for day in sessions if day < reference_date)[-40:]:
+        cumulative = sessions[day]["volume"].cumsum()
+        if cumulative.empty:
+            continue
+        index = min(slot, len(cumulative)) - 1
+        if index >= 0 and float(cumulative.iloc[index]) > 0:
+            baselines.append(float(cumulative.iloc[index]))
+
+    if len(baselines) < 5:
+        return 1.0
+    expected = float(pd.Series(baselines).median())
+    return max(0.0, float(volume) / (expected + 1e-9)) if expected > 0 else 1.0
+
+
 def _live_candles(token: int, now: datetime) -> list[dict]:
     """Build rolling 5-minute candles from recent ticks."""
     market_open = now.replace(hour=9, minute=15, second=0, microsecond=0)
@@ -1041,6 +1174,11 @@ def _rfactor(token: int, timeframe: str, ltp: float, volume: float, high: float,
     if stats.empty:
         return 0.0
 
+    if "date" in stats:
+        stats = stats[stats["date"].dt.date < datetime.now(IST).date()]
+    if stats.empty:
+        return 0.0
+
     stats["change"] = stats["close"].pct_change() * 100.0
     stats = stats.tail(20)
 
@@ -1069,6 +1207,65 @@ def _rfactor(token: int, timeframe: str, ltp: float, volume: float, high: float,
 
     raw *= max(freshness, 0.001)
     return round(3.5 * math.log1p(max(raw, 0.0)), 2)
+
+
+def _advanced_score(row: dict, relative_strength: float = 0.5) -> float:
+    """Build a bounded, direction-aware score from normalized components."""
+    direction = 1.0 if float(row.get("direction") or 1.0) > 0 else -1.0
+    change = abs(float(row.get("change") or 0.0))
+    atr_percent = max(float(row.get("atrPercent") or 1.0), 0.25)
+    return_component = _clip(change / atr_percent / 2.0)
+
+    time_volume_ratio = max(float(row.get("timeVolumeRatio") or 1.0), 0.05)
+    slot_volume_component = _clip(0.5 + 0.20 * math.log(time_volume_ratio, 2.0))
+    volume_component = 0.55 * slot_volume_component + 0.45 * _clip(float(row.get("volumeConfirm") or 0.5))
+
+    recent_alignment = direction * float(row.get("recent") or 0.0)
+    recent_component = _clip(0.5 + 0.25 * recent_alignment)
+    continuation_component = 0.60 * _clip(float(row.get("trendQuality") or 0.5)) + 0.40 * recent_component
+    adx_component = _clip((float(row.get("adx") or 10.0) - 10.0) / 30.0)
+    ema_alignment = 0.5 + direction * float(row.get("ema") or 0.0) / 5.0
+    trend_component = 0.60 * adx_component + 0.40 * _clip(ema_alignment)
+
+    flow_delta = row.get("buySellDelta")
+    flow_component = 0.5 if flow_delta is None else _clip(0.5 + 0.40 * direction * float(flow_delta))
+    rfactor_component = _clip(float(row.get("rfactor") or 0.0) / 4.0)
+
+    return round(100.0 * (
+        0.25 * return_component
+        + 0.20 * volume_component
+        + 0.15 * continuation_component
+        + 0.15 * trend_component
+        + 0.10 * _clip(relative_strength)
+        + 0.10 * flow_component
+        + 0.05 * rfactor_component
+    ), 4)
+
+
+def _apply_advanced_scores(rows: List[dict]) -> List[dict]:
+    """Add cross-sectional sector and market relative strength before ranking."""
+    if not rows:
+        return rows
+
+    market_mean = sum(float(row.get("change") or 0.0) for row in rows) / len(rows)
+    sector_values: Dict[str, List[float]] = {}
+    for row in rows:
+        sector_values.setdefault(str(row.get("sector") or "UNKNOWN"), []).append(float(row.get("change") or 0.0))
+    sector_means = {sector: sum(values) / len(values) for sector, values in sector_values.items() if values}
+    dispersion = sum(abs(float(row.get("change") or 0.0) - market_mean) for row in rows) / len(rows)
+    scale = max(0.25, dispersion * 1.5)
+
+    for row in rows:
+        direction = 1.0 if float(row.get("direction") or 1.0) > 0 else -1.0
+        change = float(row.get("change") or 0.0)
+        sector_mean = sector_means.get(str(row.get("sector") or "UNKNOWN"), market_mean)
+        sector_edge = direction * (change - sector_mean)
+        market_edge = direction * (change - market_mean)
+        relative_strength = 0.60 * _clip(0.5 + 0.25 * sector_edge / scale) + 0.40 * _clip(0.5 + 0.25 * market_edge / scale)
+        row["sectorRelative"] = round(sector_edge, 2)
+        row["marketRelative"] = round(market_edge, 2)
+        row["score"] = _advanced_score(row, relative_strength)
+    return rows
 
 
 def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
@@ -1111,7 +1308,10 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
         return None
 
     now = datetime.now(IST)
+    trend_features = _trend_features(frame, ltp, now)
     ratio = _volume_ratio(token, timeframe, volume, now)
+    atr_percent = _daily_atr_percent(token)
+    time_volume_ratio = _intraday_volume_ratio(frame, volume, now) if timeframe == "intraday" else ratio
     ema_gap = (ltp - ema) / ema * 100.0
 
     live_candles = _live_candles(token, now) if timeframe == "intraday" else []
@@ -1122,33 +1322,15 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
     elif len(close_values) >= 4 and close_values[-4]:
         recent_change = (ltp - close_values[-4]) / close_values[-4] * 100.0
 
-    aligned_recent = recent_change if change >= 0 else -recent_change
-    freshness = max(0.25, min(1.0, 0.25 + max(0.0, aligned_recent) / 0.80))
-    effective_ratio = min(ratio, 1.0) + max(ratio - 1.0, 0.0) * freshness
-
     expected_direction = 1.0 if change >= 0 else -1.0
     trend_quality = _session_trend_quality(frame, ltp, change, now, live_candles) if timeframe == "intraday" else 1.0
     volume_quality = _volume_confirmation(frame, expected_direction, now, live_candles) if timeframe == "intraday" else 1.0
 
     flow_values = [c.get("flow_delta") for c in live_candles[-3:] if c.get("flow_delta") is not None]
     buy_sell_delta = sum(flow_values) / len(flow_values) if flow_values else None
-    flow_alignment = expected_direction * float(buy_sell_delta) if buy_sell_delta is not None else 0.0
-    flow_quality = max(0.70, min(1.20, 1.0 + 0.20 * flow_alignment)) if buy_sell_delta is not None else 1.0
-
-    stale_trend = (
-        abs(change) * 0.40
-        + effective_ratio * 1.6
-        + max(0.0, adx - 18.0) / 12.0
-        + abs(ema_gap) * 0.20
-        + abs(rsi - 50.0) / 24.0 * 0.35
-    )
 
     rfactor = _rfactor(token, timeframe, ltp, volume, day_high, day_low, change)
-    rfactor_quality = max(0.0, min(1.0, rfactor / 4.0))
     continuation_quality = max(0.05, min(1.0, trend_quality * volume_quality))
-
-    base_score = max(0.0, aligned_recent) * 2.3 + stale_trend * (0.35 + 0.65 * freshness)
-    score = base_score * continuation_quality * (0.65 + 0.35 * rfactor_quality) * flow_quality
 
     volatility = (
         "high" if abs(change) >= 2.5 or abs(ema_gap) >= 2.5
@@ -1157,7 +1339,7 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
     )
     positive = change >= 0
 
-    return {
+    row = {
         "symbol": symbol,
         "display": symbol,
         "ltp": round(ltp, 2),
@@ -1171,16 +1353,23 @@ def _build_row(symbol: str, sector: str, timeframe: str) -> Optional[dict]:
         "buySellDelta": round(buy_sell_delta, 2) if buy_sell_delta is not None else None,
         "volume": round((ratio - 1.0) * 100.0, 2),
         "ratio": round(ratio, 2),
+        "timeVolumeRatio": round(time_volume_ratio, 2),
+        "vwapGap": round(trend_features["vwapGap"], 2) if trend_features["vwapGap"] is not None else None,
+        "emaTrend5": round(trend_features["emaTrend5"], 3) if trend_features["emaTrend5"] is not None else None,
+        "emaTrend15": round(trend_features["emaTrend15"], 3) if trend_features["emaTrend15"] is not None else None,
+        "atrPercent": round(atr_percent, 2),
         "rsi": round(rsi, 1),
         "adx": round(adx, 1),
         "ema": round(ema_gap, 2),
-        "score": round(score, 4),
+        "score": 0.0,
         "rfactor": rfactor,
         "volatility": volatility,
         "rank": 0,
         "spark": _sparkline(close_values, positive),
         "isIndex": False,
     }
+    row["score"] = _advanced_score(row)
+    return row
 
 
 INDEX_GROUPS = {
@@ -1209,6 +1398,9 @@ def _aggregate_index(name: str, rows: List[dict]) -> Optional[dict]:
     ratio = average("ratio")
     ema = average("ema")
     score = average("score")
+    vwap_gap = average("vwapGap")
+    ema_trend5 = average("emaTrend5")
+    ema_trend15 = average("emaTrend15")
 
     strongest = max(rows, key=lambda row: float(row.get("score") or 0.0))
     volatility = "high" if abs(change) >= 1.8 else "medium" if abs(change) >= 0.8 else "low"
@@ -1222,6 +1414,9 @@ def _aggregate_index(name: str, rows: List[dict]) -> Optional[dict]:
         "change": round(change, 2),
         "volume": round((ratio - 1.0) * 100.0, 2),
         "ratio": round(ratio, 2),
+        "vwapGap": round(vwap_gap, 2),
+        "emaTrend5": round(ema_trend5, 3),
+        "emaTrend15": round(ema_trend15, 3),
         "rsi": round(average("rsi"), 1),
         "adx": round(average("adx"), 1),
         "ema": round(ema, 2),
@@ -1253,7 +1448,6 @@ def _rank(rows: List[dict]) -> List[dict]:
     rows[:] = _directional_rank(rows, "score")
     for row in rows:
         row["_scan_score"] = row.get("score")
-        row.pop("score", None)
     return rows
 
 
@@ -1266,11 +1460,11 @@ def build_rows(timeframe: str, universe: str, sector: str) -> List[dict]:
         rows = []
         for name, symbols in INDEX_GROUPS.items():
             selected = [s for s in dict.fromkeys(symbols) if (not FAST_MODE or s in detail_symbols)]
-            children = [_build_row(s, "INDEX", timeframe) for s in selected]
+            children = _apply_advanced_scores([row for row in (_build_row(s, "INDEX", timeframe) for s in selected) if row])
             aggregate = _aggregate_index(name, [r for r in children if r])
             if aggregate:
                 rows.append(aggregate)
-        return _rank(rows)
+        return _rank(_apply_advanced_scores(rows))
 
     membership: Dict[str, str] = {}
     for group, symbols in SECTOR_DEFINITIONS.items():
@@ -1282,7 +1476,7 @@ def build_rows(timeframe: str, universe: str, sector: str) -> List[dict]:
         symbols = [s for s in symbols if s in detail_symbols]
 
     rows = [_build_row(symbol, membership.get(symbol, sector), timeframe) for symbol in symbols]
-    return _rank([row for row in rows if row])
+    return _rank(_apply_advanced_scores([row for row in rows if row]))
 
 
 def _rows_from_cache(timeframe: str, universe: str, sector: str) -> List[dict]:
@@ -1297,12 +1491,13 @@ def _rows_from_cache(timeframe: str, universe: str, sector: str) -> List[dict]:
     return rows
 
 
-def build_sector_flow() -> List[dict]:
+def build_sector_flow(rows: Optional[List[dict]] = None) -> List[dict]:
     membership: Dict[str, str] = {}
     for group, symbols in SECTOR_DEFINITIONS.items():
         for symbol in symbols:
             membership.setdefault(symbol, group)
 
+    score_by_symbol = {str(row.get("symbol")): row for row in (rows or []) if row.get("symbol")}
     grouped: Dict[str, dict] = {}
     now = datetime.now(IST)
     with DATA_LOCK:
@@ -1333,6 +1528,8 @@ def build_sector_flow() -> List[dict]:
                 "sum": 0.0,
                 "volume_ratio_sum": 0.0,
                 "volume_ratio_count": 0,
+                "dir_score_sum": 0.0,
+                "score_count": 0,
                 "count": 0,
                 "up": 0,
                 "down": 0,
@@ -1342,6 +1539,11 @@ def build_sector_flow() -> List[dict]:
         if volume_ratio is not None:
             group["volume_ratio_sum"] += volume_ratio
             group["volume_ratio_count"] += 1
+        score_row = score_by_symbol.get(symbol)
+        if score_row is not None:
+            direction = 1.0 if float(score_row.get("direction") or 1.0) > 0 else -1.0
+            group["dir_score_sum"] += direction * float(score_row.get("score") or 0.0)
+            group["score_count"] += 1
         group["count"] += 1
         group["up"] += int(change >= 0)
         group["down"] += int(change < 0)
@@ -1357,6 +1559,9 @@ def build_sector_flow() -> List[dict]:
                 group["volume_ratio_sum"] / group["volume_ratio_count"], 2
             )
             if group["volume_ratio_count"]
+            else None,
+            "dirRScore": round(group["dir_score_sum"] / group["score_count"], 2)
+            if group["score_count"]
             else None,
             "count": group["count"],
             "up": group["up"],
@@ -1374,7 +1579,7 @@ def _refresh_scan_cache() -> None:
             "stocks": build_rows(timeframe, "stocks", "ALL"),
             "index": build_rows(timeframe, "index", "ALL"),
         }
-    sector_flow = build_sector_flow()
+    sector_flow = build_sector_flow(snapshots["intraday"]["stocks"])
 
     with SCAN_CACHE_LOCK:
         for timeframe, universes in snapshots.items():
@@ -1564,6 +1769,7 @@ def scan():
         "fast_mode": FAST_MODE,
         "universe_size": len(SYMBOL_TO_TOKEN),
         "detail_symbols": len(DETAIL_SYMBOLS),
+        "nifty_index": _official_nifty_quote(),
         "sector_flow": sector_flow,
         "ticks": TOTAL_TICKS,
         "rows": rows,
