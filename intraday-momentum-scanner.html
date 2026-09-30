@@ -176,7 +176,11 @@ h1 { font-size: clamp(25px, 3vw, 34px); line-height: 1.05; letter-spacing: -.055
 
 .nifty-regime-kicker { display: none; }
 
-.nifty-regime-label { overflow: hidden; color: var(--regime-text); font-size: 10px; font-weight: 900; letter-spacing: .03em; text-overflow: ellipsis; white-space: nowrap; }
+.nifty-regime-label { min-width: 0; flex: 1 1 auto; overflow: hidden; color: var(--regime-text); font-size: 10px; font-weight: 900; letter-spacing: .03em; text-overflow: ellipsis; white-space: nowrap; }
+
+.nifty-regime-strength { flex: 0 0 auto; color: var(--regime-accent); font-size: 10px; font-weight: 950; letter-spacing: .02em; white-space: nowrap; }
+
+.nifty-regime-strength::before { content: "—"; margin: 0 3px; opacity: .55; }
 
 .nifty-regime-meta { display: none; }
 
@@ -358,9 +362,9 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-fill { position: absolute; z-index: 1; left: 50%; width: 42px; transform: translateX(-50%); min-width: 20px; max-width: 48px; border-radius: 17px; box-shadow: 0 8px 18px rgba(0, 0, 0, .22); }
 
-.flow-fill.positive { bottom: calc(100% - var(--flow-baseline, 68%)); background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
+.flow-fill.positive { bottom: calc(100% - var(--flow-baseline, 50%)); background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
 
-.flow-fill.negative { top: var(--flow-baseline, 68%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
+.flow-fill.negative { top: var(--flow-baseline, 50%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
 
 .flow-fill.buy { background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
 
@@ -1302,7 +1306,7 @@ top: 28%;
 
   .flow-sort button.active { box-shadow: 0 5px 12px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .84); }
 
-  .flow-bar-zone::before { position: absolute; top: var(--flow-baseline, 68%); right: 3%; left: 3%; height: 1px; background: linear-gradient(90deg, transparent, rgba(177, 198, 235, .36), transparent); content: ""; }
+  .flow-bar-zone::before { position: absolute; top: var(--flow-baseline, 50%); right: 3%; left: 3%; height: 1px; background: linear-gradient(90deg, transparent, rgba(177, 198, 235, .36), transparent); content: ""; }
 
   .flow-fill { box-shadow: 0 13px 27px rgba(67, 202, 153, .22), inset 0 1px 0 rgba(255, 255, 255, .25); }
 
@@ -1469,6 +1473,8 @@ top: 28%;
 <span class="nifty-regime-kicker">NIFTY 50 REGIME</span>
 
 <strong class="nifty-regime-label" id="niftyRegimeText">NIFTY REGIME WAITING</strong>
+
+<span class="nifty-regime-strength" id="niftyRegimeStrength">—</span>
 
 <span class="nifty-regime-meta" id="niftyRegimeMeta">Waiting for live NIFTY 50 breadth and volume data</span>
 
@@ -2510,6 +2516,16 @@ return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numer
 
 
 
+function normalizeNiftyStrength(value) {
+
+const numeric = Number(value);
+
+return Number.isFinite(numeric) ? Math.max(10, Math.min(100, Math.round(numeric / 10) * 10)) : 10;
+
+}
+
+
+
 function setNiftyRegimeWaiting(message = "Waiting for live NIFTY 50 breadth and volume data") {
 
 const card = document.getElementById("niftyRegimeCard");
@@ -2517,6 +2533,8 @@ const card = document.getElementById("niftyRegimeCard");
 card.dataset.regime = "waiting";
 
 document.getElementById("niftyRegimeText").textContent = "NIFTY REGIME WAITING";
+
+document.getElementById("niftyRegimeStrength").textContent = "—";
 
 document.getElementById("niftyRegimeMeta").textContent = message;
 
@@ -2750,11 +2768,11 @@ if (snapshot.leadership < previousSnapshot.leadership - 0.05) bearishVotes += 1;
 
 }
 
-const confidence = Math.min(100, Math.round(Math.max(bullishVotes, bearishVotes) / 9 * 100));
+const confidence = normalizeNiftyStrength(Math.max(bullishVotes, bearishVotes) / 9 * 100);
 
 const bias = bullishVotes > bearishVotes ? "bullish" : bearishVotes > bullishVotes ? "bearish" : previousBias || (snapshot.change >= 0 ? "bullish" : "bearish");
 
-return { bias, confidence, bullishVotes, bearishVotes };
+return { bias, confidence, strength: confidence, bullishVotes, bearishVotes };
 
 }
 
@@ -2798,7 +2816,9 @@ const bias = confirmed ? candidate.bias : previousBias;
 
 const display = confirmed && previousBias && previousBias !== bias ? `turning-${bias}` : bias;
 
-niftyRegimeMemory = { session, fingerprint, bias, display, snapshot, candidate: candidate.bias, candidateCount, confidence: candidate.confidence };
+const strength = candidate.bias === bias ? candidate.strength : normalizeNiftyStrength(niftyRegimeMemory?.strength ?? niftyRegimeMemory?.confidence ?? candidate.strength);
+
+niftyRegimeMemory = { session, fingerprint, bias, display, snapshot, candidate: candidate.bias, candidateCount, strength, confidence: strength };
 
 try { sessionStorage.setItem(NIFTY_REGIME_STORAGE_KEY, JSON.stringify(niftyRegimeMemory)); } catch (error) { /* Storage is optional. */ }
 
@@ -2822,6 +2842,10 @@ card.dataset.regime = niftyRegimeMemory.display;
 
 document.getElementById("niftyRegimeText").textContent = labels[niftyRegimeMemory.display];
 
+const strength = normalizeNiftyStrength(niftyRegimeMemory.strength ?? niftyRegimeMemory.confidence ?? 10);
+
+document.getElementById("niftyRegimeStrength").textContent = `${strength}%`;
+
 const meta = [`${signed(snapshot.change, 2)}%`];
 
 if (snapshot.total) meta.push(`${Math.round(snapshot.up / snapshot.total * 100)}% advancing`);
@@ -2834,7 +2858,7 @@ if (Number.isFinite(snapshot.vwapBreadth)) meta.push(`VWAP breadth ${signed(snap
 
 if (Number.isFinite(snapshot.emaTrend5) && Number.isFinite(snapshot.emaTrend15)) meta.push(`Trend ${signed(snapshot.emaTrend5, 2)} / ${signed(snapshot.emaTrend15, 2)}`);
 
-meta.push(`Confidence ${niftyRegimeMemory.confidence}%`);
+meta.push(`Strength ${strength}%`);
 
 document.getElementById("niftyRegimeMeta").textContent = meta.join(" · ");
 
@@ -3130,39 +3154,7 @@ return Number.isFinite(ratio) ? ratio - 1 : 0;
 
 };
 
-const deltas = items.map(metricDelta);
-
-const positiveMax = Math.max(...deltas.filter(value => value > 0), .01);
-
-const negativeMax = Math.max(...deltas.filter(value => value < 0).map(value => Math.abs(value)), .01);
-
-const isGreenPressure = item => {
-
-const mean = isScoreSort ? Number(item.dirRScore) : Number(item.mean);
-
-return !Number.isFinite(mean) || mean >= 0;
-
-};
-
-const greenFlowTotal = isVolumeSort
-
-? items.filter(isGreenPressure).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
-
-: items.reduce((sum, item) => sum + Math.max(0, metricDelta(item)), 0);
-
-const redFlowTotal = isVolumeSort
-
-? items.filter(item => !isGreenPressure(item)).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
-
-  : items.reduce((sum, item) => sum + Math.max(0, -metricDelta(item)), 0);
-
-const flowTotal = greenFlowTotal + redFlowTotal;
-
-const baseline = flowTotal > 0
-
-? Math.min(70, Math.max(30, greenFlowTotal / flowTotal * 100))
-
-: 50;
+const baseline = 50;
 
 const mobileFlow = window.matchMedia("(max-width: 760px)").matches;
 
@@ -3170,21 +3162,11 @@ const chartHeight = mobileFlow ? 180 : 350;
 
 const baselineGap = mobileFlow ? 2 : 4;
 
-const greenHeightSpace = Math.max(16, baseline / 100 * chartHeight - baselineGap);
+const barHeightSpace = Math.max(16, chartHeight / 2 - baselineGap);
 
-const redHeightSpace = Math.max(16, (1 - baseline / 100) * chartHeight - baselineGap);
+const barMetric = item => isVolumeSort ? sortValue(item) : metricDelta(item);
 
-const greenRatioMax = isVolumeSort
-
-? Math.max(...items.filter(isGreenPressure).map(item => sortValue(item)).filter(Number.isFinite), 1)
-
-: 0;
-
-const redRatioMax = isVolumeSort
-
-? Math.max(...items.filter(item => !isGreenPressure(item)).map(item => sortValue(item)).filter(Number.isFinite), 1)
-
-: 0;
+const commonMax = Math.max(...items.map(barMetric).filter(Number.isFinite).map(value => Math.abs(value)), .01);
 
 container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
@@ -3192,13 +3174,13 @@ container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
 document.getElementById("sectorFlowCaption").textContent = isVolumeSort
 
-? "Auto flow spacing favors the side with more total VolmRatio · bar height = raw VolmRatio mean · color = %CHG mean"
+? "Centered baseline · common scale · bar height = raw VolmRatio mean · color = %CHG mean"
 
 : isScoreSort
 
-? "Auto flow spacing favors the side with more total directional Score · bar height = dirRScore · color = bullish or bearish Score"
+? "Centered baseline · common scale · bar height = dirRScore · color = bullish or bearish Score"
 
-: "Auto flow spacing favors the side with more total %CHG mean · bar height = %CHG mean";
+: "Centered baseline · common scale · bar height = %CHG mean";
 
 container.innerHTML = items.map(item => {
 
@@ -3220,11 +3202,7 @@ const pressure = isVolumeSort
 
 const volumeSide = isVolumeSort ? (pressure === "buy" ? "positive" : "negative") : (positive ? "positive" : "negative");
 
-const height = hasMetric
-
-? (isVolumeSort ? Math.max(8, ratio / (pressure === "buy" ? greenRatioMax : redRatioMax) * (pressure === "buy" ? greenHeightSpace : redHeightSpace)) : Math.max(8, Math.abs(delta) / (positive ? positiveMax : negativeMax) * (positive ? greenHeightSpace : redHeightSpace)))
-
-: 8;
+const height = hasMetric ? Math.max(8, Math.abs(barMetric(item)) / commonMax * barHeightSpace) : 8;
 
 const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : isScoreSort ? (hasMetric ? scoreMultiplier(ratio, true) : "—") : `${signed(item.mean)}%`;
 
