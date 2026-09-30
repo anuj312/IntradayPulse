@@ -362,9 +362,9 @@ tbody tr:hover { background: #fafcfd; }
 
 .flow-fill { position: absolute; z-index: 1; left: 50%; width: 42px; transform: translateX(-50%); min-width: 20px; max-width: 48px; border-radius: 17px; box-shadow: 0 8px 18px rgba(0, 0, 0, .22); }
 
-.flow-fill.positive { bottom: calc(100% - var(--flow-baseline, 50%)); background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
+.flow-fill.positive { bottom: calc(100% - var(--flow-baseline, 68%)); background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
 
-.flow-fill.negative { top: var(--flow-baseline, 50%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
+.flow-fill.negative { top: var(--flow-baseline, 68%); background: linear-gradient(180deg, #ed7794 0%, #bc3659 100%); }
 
 .flow-fill.buy { background: linear-gradient(180deg, #7ce9b8 0%, #3da978 100%); }
 
@@ -1306,7 +1306,7 @@ top: 28%;
 
   .flow-sort button.active { box-shadow: 0 5px 12px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .84); }
 
-  .flow-bar-zone::before { position: absolute; top: var(--flow-baseline, 50%); right: 3%; left: 3%; height: 1px; background: linear-gradient(90deg, transparent, rgba(177, 198, 235, .36), transparent); content: ""; }
+  .flow-bar-zone::before { position: absolute; top: var(--flow-baseline, 68%); right: 3%; left: 3%; height: 1px; background: linear-gradient(90deg, transparent, rgba(177, 198, 235, .36), transparent); content: ""; }
 
   .flow-fill { box-shadow: 0 13px 27px rgba(67, 202, 153, .22), inset 0 1px 0 rgba(255, 255, 255, .25); }
 
@@ -3154,7 +3154,39 @@ return Number.isFinite(ratio) ? ratio - 1 : 0;
 
 };
 
-const baseline = 50;
+const deltas = items.map(metricDelta);
+
+const positiveMax = Math.max(...deltas.filter(value => value > 0), .01);
+
+const negativeMax = Math.max(...deltas.filter(value => value < 0).map(value => Math.abs(value)), .01);
+
+const isGreenPressure = item => {
+
+const mean = isScoreSort ? Number(item.dirRScore) : Number(item.mean);
+
+return !Number.isFinite(mean) || mean >= 0;
+
+};
+
+const greenFlowTotal = isVolumeSort
+
+? items.filter(isGreenPressure).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
+
+: items.reduce((sum, item) => sum + Math.max(0, metricDelta(item)), 0);
+
+const redFlowTotal = isVolumeSort
+
+? items.filter(item => !isGreenPressure(item)).reduce((sum, item) => sum + Math.max(0, sortValue(item)), 0)
+
+  : items.reduce((sum, item) => sum + Math.max(0, -metricDelta(item)), 0);
+
+const flowTotal = greenFlowTotal + redFlowTotal;
+
+const baseline = flowTotal > 0
+
+? Math.min(70, Math.max(30, greenFlowTotal / flowTotal * 100))
+
+: 50;
 
 const mobileFlow = window.matchMedia("(max-width: 760px)").matches;
 
@@ -3162,11 +3194,21 @@ const chartHeight = mobileFlow ? 180 : 350;
 
 const baselineGap = mobileFlow ? 2 : 4;
 
-const barHeightSpace = Math.max(16, chartHeight / 2 - baselineGap);
+const greenHeightSpace = Math.max(16, baseline / 100 * chartHeight - baselineGap);
 
-const barMetric = item => isVolumeSort ? sortValue(item) : metricDelta(item);
+const redHeightSpace = Math.max(16, (1 - baseline / 100) * chartHeight - baselineGap);
 
-const commonMax = Math.max(...items.map(barMetric).filter(Number.isFinite).map(value => Math.abs(value)), .01);
+const greenRatioMax = isVolumeSort
+
+? Math.max(...items.filter(isGreenPressure).map(item => sortValue(item)).filter(Number.isFinite), 1)
+
+: 0;
+
+const redRatioMax = isVolumeSort
+
+? Math.max(...items.filter(item => !isGreenPressure(item)).map(item => sortValue(item)).filter(Number.isFinite), 1)
+
+: 0;
 
 container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
@@ -3174,13 +3216,13 @@ container.style.setProperty("--flow-baseline", `${baseline.toFixed(2)}%`);
 
 document.getElementById("sectorFlowCaption").textContent = isVolumeSort
 
-? "Centered baseline · common scale · bar height = raw VolmRatio mean · color = %CHG mean"
+? "Auto flow spacing favors the side with more total VolmRatio · bar height = raw VolmRatio mean · color = %CHG mean"
 
 : isScoreSort
 
-? "Centered baseline · common scale · bar height = dirRScore · color = bullish or bearish Score"
+? "Auto flow spacing favors the side with more total directional Score · bar height = dirRScore · color = bullish or bearish Score"
 
-: "Centered baseline · common scale · bar height = %CHG mean";
+: "Auto flow spacing favors the side with more total %CHG mean · bar height = %CHG mean";
 
 container.innerHTML = items.map(item => {
 
@@ -3202,7 +3244,11 @@ const pressure = isVolumeSort
 
 const volumeSide = isVolumeSort ? (pressure === "buy" ? "positive" : "negative") : (positive ? "positive" : "negative");
 
-const height = hasMetric ? Math.max(8, Math.abs(barMetric(item)) / commonMax * barHeightSpace) : 8;
+const height = hasMetric
+
+? (isVolumeSort ? Math.max(8, ratio / (pressure === "buy" ? greenRatioMax : redRatioMax) * (pressure === "buy" ? greenHeightSpace : redHeightSpace)) : Math.max(8, Math.abs(delta) / (positive ? positiveMax : negativeMax) * (positive ? greenHeightSpace : redHeightSpace)))
+
+: 8;
 
 const value = isVolumeSort ? (hasMetric ? `${formatNumber(ratio, 2)}×` : "—") : isScoreSort ? (hasMetric ? scoreMultiplier(ratio, true) : "—") : `${signed(item.mean)}%`;
 
