@@ -2321,7 +2321,7 @@ span.flow-sort { padding: 8px 14px; }
 
 .leader-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 14px; }
 .volume-ratio-list { flex: 0 0 500px; height: 500px; max-height: 500px; }
-.score-list { flex: 0 0 640px; height: 640px; max-height: 640px; }
+.score-list { flex: 0 0 500px; height: 500px; max-height: 500px; }
 
 .leader-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
 .leader-table th {
@@ -2816,6 +2816,52 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .flow-bar-zone { margin-bottom: 14px; }
 }
 
+/* Keep the paired leader tables on the same row and bottom baseline. */
+.leaders-grid { align-items: stretch; }
+.leader-column { align-self: stretch; }
+.leader-table tbody tr,
+.leader-table tbody td { height: 56px; vertical-align: middle; }
+
+/* Secondary views show eight rows and scroll through fifteen. */
+.volume-ratio-list,
+.score-list { flex-basis: 500px; height: 500px; max-height: 500px; }
+
+@media (max-width: 640px) {
+  .leader-table tbody tr,
+  .leader-table tbody td { height: 44px; }
+
+  .volume-ratio-list,
+  .score-list { flex-basis: 390px; height: 390px; max-height: 390px; }
+}
+
+/* Show seven leader rows at a time; the fifteen-row list remains scrollable. */
+.leaders-side .leader-list {
+  flex: 0 0 436px;
+  height: 436px;
+  max-height: 436px;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .leaders-side .leader-list {
+    flex-basis: 340px;
+    height: 340px;
+    max-height: 340px;
+  }
+}
+
+@media (min-width: 761px) {
+  .content-grid > .panel.leaders-side { height: 500px; }
+}
+
+@media (max-width: 760px) {
+  .content-grid > .panel.leaders-side { height: 820px; }
+}
+
+@media (max-width: 640px) {
+  .content-grid > .panel.leaders-side { height: 880px; }
+}
+
   </style>
 
 </head>
@@ -3052,7 +3098,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 <h2 class="panel-title">Volm Ratio</h2>
 
-<p class="panel-caption">Positive and negative %CHG stocks, each sorted by VolmRatio; scroll after the first 10.</p>
+<p class="panel-caption">Positive and negative %CHG stocks, each sorted by VolmRatio; scroll after the first 8.</p>
 
 </div>
 
@@ -3064,7 +3110,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 <section class="leader-column gainers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers by VolmRatio</h3><span id="volumeLeadersCount">0 / 30</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Gainers by VolmRatio</h3><span id="volumeLeadersCount">0 / 15</span></div>
 
 <div class="leader-list volume-ratio-list" id="volumeLeadersList"></div>
 
@@ -3072,7 +3118,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 <section class="leader-column losers">
 
-<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Decliners by VolmRatio</h3><span id="volumeDeclinesCount">0 / 30</span></div>
+<div class="leader-column-head"><span class="leader-dot"></span><h3>Top Decliners by VolmRatio</h3><span id="volumeDeclinesCount">0 / 15</span></div>
 
 <div class="leader-list volume-ratio-list" id="volumeDeclinesList"></div>
 
@@ -3808,9 +3854,9 @@ const averageRatio = rows => rows.length ? rows.reduce((sum, row) => sum + Numbe
 
 const scoreValue = row => Number.isFinite(Number(row.score)) ? Number(row.score) : Number(row.rfactor || 0);
 
-const gainers = allRows.filter(row => Number(row.change) > 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(b.change) - Number(a.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 40);
+const gainers = allRows.filter(row => Number(row.change) > 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(b.change) - Number(a.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 15);
 
-const losers = allRows.filter(row => Number(row.change) < 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(a.change) - Number(b.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 40);
+const losers = allRows.filter(row => Number(row.change) < 0).sort((a, b) => scoreValue(b) - scoreValue(a) || Number(a.change) - Number(b.change) || String(a.symbol).localeCompare(String(b.symbol))).slice(0, 15);
 
 const change = value => Number.isFinite(Number(value)) ? `${signed(Number(value), 1)}%` : "—";
 
@@ -4282,7 +4328,7 @@ const leaders = rows
 
 .sort((a, b) => Number(b.ratio) - Number(a.ratio) || Number(b.change) - Number(a.change) || String(a.symbol).localeCompare(String(b.symbol)))
 
-.slice(0, 30);
+.slice(0, 15);
 
 const declines = [...rows]
 
@@ -4290,7 +4336,7 @@ const declines = [...rows]
 
 .sort((a, b) => Number(b.ratio) - Number(a.ratio) || Number(a.change) - Number(b.change) || String(a.symbol).localeCompare(String(b.symbol)))
 
-.slice(0, 30);
+.slice(0, 15);
 
 const renderList = (items, tone) => items.length ? `<table class="leader-table volume-ratio-table">
 
@@ -4332,9 +4378,9 @@ document.getElementById("volumeLeadersList").innerHTML = renderList(leaders, "po
 
 document.getElementById("volumeDeclinesList").innerHTML = renderList(declines, "negative");
 
-document.getElementById("volumeLeadersCount").textContent = `${leaders.length} / 30`;
+document.getElementById("volumeLeadersCount").textContent = `${leaders.length} / 15`;
 
-document.getElementById("volumeDeclinesCount").textContent = `${declines.length} / 30`;
+document.getElementById("volumeDeclinesCount").textContent = `${declines.length} / 15`;
 
 }
 
@@ -4768,7 +4814,7 @@ document.getElementById("volumeRatioView").classList.toggle("view-hidden", !volu
 
 document.getElementById("changeView").classList.toggle("view-hidden", !percentChange);
 
-document.getElementById("pageTitle").textContent = flow ? "Sector flow" : volume ? "Volm Ratio" : percentChange ? "% Change" : "Intraday Momentum Scanner";
+document.getElementById("pageTitle").textContent = flow ? "Sector flow" : volume ? "Volm Ratio" : percentChange ? "% Change" : "Intraday Trend Hunter";
 
 document.getElementById("pageSubhead").textContent = flow
 
